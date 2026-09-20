@@ -259,6 +259,37 @@ a:hover { color: var(--ink); }
 .gameover__title { margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--primary-glow); }
 .gameover__sub { margin: 0; color: var(--ink-2); font-family: var(--mono); font-size: 0.85rem; }
 
+/* ---------- circuit diagram ---------- */
+.circuit {
+  margin: 0 var(--gutter) 12px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.circuit__head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.circuit__head h3 { font-size: 0.8rem; font-weight: 600; }
+.circuit__head .tag { margin-inline-start: 0; }
+.circuit__note {
+  font-size: 0.66rem;
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  margin-inline-start: auto;
+}
+.circuit canvas {
+  display: block;
+  width: 100%;
+  height: 190px;
+  border-radius: var(--r-sm);
+  background: oklch(0.045 0 0);
+}
+@media (max-width: 700px) {
+  .circuit canvas { height: 230px; }
+  .circuit__note { display: none; }
+}
+
 /* ---------- telemetry ---------- */
 .telemetry {
   display: grid;

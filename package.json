@@ -12,7 +12,8 @@
     "closedloop": "node tools/closedloop.mjs",
     "extract": "python tools/extract_circuit.py",
     "cxsweep": "node tools/cxsweep.mjs",
-    "survival": "node tools/survival.mjs"
+    "survival": "node tools/survival.mjs",
+    "test": "node tools/test.mjs"
   },
   "keywords": [],
   "author": "",

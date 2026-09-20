@@ -92,6 +92,11 @@ export class FlyBrain {
     this.listCap = Math.max(4096, Math.min(n * 4, 65536));
     this.ringList = new Int32Array(RING * this.listCap);
     this.ringCount = new Int32Array(RING);
+    // Set when a slot's delivery list fills up. The charge still lands in the
+    // ring, but its target is not recorded, so that slot has to be drained by a
+    // full scan instead. Without this the charge would simply never be
+    // collected - a silent loss that only shows up under a synchronised burst.
+    this.ringOverflow = new Uint8Array(RING);
     this.ringSlot = 0;
 
     // active set
@@ -165,6 +170,7 @@ export class FlyBrain {
     this.frameSpikes.fill(0);
     this.ring.fill(0);
     this.ringCount.fill(0);
+    this.ringOverflow.fill(0);
     this.isActive.fill(0);
     this.activeCount = 0;
     this.ringSlot = 0;
@@ -177,7 +183,8 @@ export class FlyBrain {
   /** Advance the network by `steps` * DT milliseconds. */
   step(steps) {
     const { v, g, refrac, silenced, extRate, ring, ringList, ringCount,
-      indptr, indices, weights, isActive, activeList, frameSpikes } = this;
+      ringOverflow, indptr, indices, weights, isActive, activeList,
+      frameSpikes } = this;
     const n = this.n;
     const decayMem = this.decayMem, decaySyn = this.decaySyn;
     const rng = this.rng;
@@ -194,11 +201,9 @@ export class FlyBrain {
       const base = slot * n;
 
       // deliver charge scheduled for this step
-      const cnt = ringCount[slot];
-      if (cnt) {
-        const lbase = slot * listCap;
-        for (let k = 0; k < cnt; k++) {
-          const t = ringList[lbase + k];
+      if (ringOverflow[slot]) {
+        // list was truncated, so sweep the whole slot to be sure
+        for (let t = 0; t < n; t++) {
           const inc = ring[base + t];
           if (inc !== 0) {
             ring[base + t] = 0;
@@ -206,7 +211,23 @@ export class FlyBrain {
             if (!isActive[t]) { isActive[t] = 1; activeList[active++] = t; }
           }
         }
+        ringOverflow[slot] = 0;
         ringCount[slot] = 0;
+      } else {
+        const cnt = ringCount[slot];
+        if (cnt) {
+          const lbase = slot * listCap;
+          for (let k = 0; k < cnt; k++) {
+            const t = ringList[lbase + k];
+            const inc = ring[base + t];
+            if (inc !== 0) {
+              ring[base + t] = 0;
+              g[t] += inc;
+              if (!isActive[t]) { isActive[t] = 1; activeList[active++] = t; }
+            }
+          }
+          ringCount[slot] = 0;
+        }
       }
 
       const target = (slot + DELAY_STEPS) & (RING - 1);
@@ -247,6 +268,7 @@ export class FlyBrain {
             const tgt = indices[k];
             ring[tbase + tgt] += weights[k];
             if (c < listCap) ringList[tlist + c++] = tgt;
+            else ringOverflow[target] = 1;
           }
           ringCount[target] = c;
         }

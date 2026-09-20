@@ -15,6 +15,7 @@ import { StandRenderer } from './game/render.js';
 import { BrainView, parseCloud, ROLE_COLORS, ROLE_LABELS } from './brain3d.js';
 import { SpikeRaster, TracePanel } from './ui/panels.js';
 import { buildControls } from './ui/controls.js';
+import { PathwayView } from './ui/pathway.js';
 
 const $ = (id) => document.getElementById(id);
 const bootStatus = $('boot-status');
@@ -48,6 +49,7 @@ async function main() {
   const view = new BrainView($('brain'), circuit, meta, cloud);
   const raster = new SpikeRaster($('raster'), meta);
   const traces = new TracePanel($('traces'));
+  const pathway = new PathwayView($('pathway'), circuit, meta);
 
   $('stat-neurons').textContent = meta.nNeurons.toLocaleString('he-IL');
   $('raster-note').textContent = meta.nEdges.toLocaleString('he-IL') + ' סינפסות';
@@ -91,15 +93,16 @@ async function main() {
   });
 
   const ro = new ResizeObserver(() => {
-    stand.resize(); view.resize(); raster.resize(); traces.resize();
+    stand.resize(); view.resize(); raster.resize(); traces.resize(); pathway.resize();
   });
   ro.observe($('game').parentElement);
   ro.observe($('brain').parentElement);
   ro.observe($('raster'));
   ro.observe($('traces'));
+  ro.observe($('pathway'));
 
   // handy for poking at the running system from the console
-  window.__fly = { brain, controller, game, view, stand, meta,
+  window.__fly = { brain, controller, game, view, stand, pathway, meta,
     get handAz() { return handAz; }, get paused() { return paused; } };
 
   $('boot').dataset.done = '1';
@@ -164,6 +167,7 @@ async function main() {
         steerHz: out.steerHz,
       };
       stand.draw(game, handAz, tSec, dt, neural);
+      pathway.draw(brain, out, dt);
 
       $('stat-score').textContent = game.score.toLocaleString('he-IL');
       $('stat-served').textContent = game.served.toLocaleString('he-IL');
@@ -181,6 +185,7 @@ async function main() {
     } else {
       raster.push(null, 0, true);
       stand.draw(game, handAz, tSec, dt, controller.lastOut || null);
+      pathway.draw(brain, controller.lastOut || null, dt);
     }
 
     raster.overlay();

@@ -212,7 +212,14 @@ export class BrainView {
     this.scene.add(this.points);
   }
 
-  /** A sampled subset of the pathway wiring, so the shape of the circuit reads. */
+  /**
+   * A sampled subset of the pathway wiring.
+   *
+   * Each edge remembers which neuron it comes from, so it can brighten while
+   * that neuron is firing. The result is that you watch signal travel along the
+   * actual connections rather than just seeing endpoints blink: the same thing
+   * the 2D pathway panel shows, in anatomical space.
+   */
   buildEdges(circuit, meta, cap = 3600) {
     const keep = [];
     const roles = meta.roles;
@@ -221,26 +228,57 @@ export class BrainView {
       for (let k = circuit.indptr[a]; k < circuit.indptr[a + 1]; k++) {
         const b = circuit.indices[k];
         if (roles[b] === 'other') continue;
-        keep.push(a, b);
+        keep.push(a, b, circuit.weights[k] < 0 ? 1 : 0);
       }
     }
-    const stride = Math.max(1, Math.floor(keep.length / 2 / cap));
+    const nEdge = keep.length / 3;
+    const stride = Math.max(1, Math.floor(nEdge / cap));
     const verts = [];
-    for (let i = 0; i < keep.length; i += 2 * stride) {
-      const a = keep[i], b = keep[i + 1];
+    const src = [];
+    const inh = [];
+    for (let i = 0; i < nEdge; i += stride) {
+      const a = keep[i * 3], b = keep[i * 3 + 1];
       verts.push(
         circuit.pos[a * 3], -circuit.pos[a * 3 + 1], circuit.pos[a * 3 + 2],
         circuit.pos[b * 3], -circuit.pos[b * 3 + 1], circuit.pos[b * 3 + 2],
       );
+      src.push(a);
+      inh.push(keep[i * 3 + 2]);
     }
+    this.edgeSrc = Int32Array.from(src);
+    this.edgeInh = Uint8Array.from(inh);
+    this.edgeColor = new Float32Array(src.length * 6);
+
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    this.edgeColorAttr = new THREE.BufferAttribute(this.edgeColor, 3);
+    this.edgeColorAttr.setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('color', this.edgeColorAttr);
     const m = new THREE.LineBasicMaterial({
-      color: 0x3f5a6b, transparent: true, opacity: 0.13,
+      vertexColors: true, transparent: true, opacity: 0.55,
       depthWrite: false, blending: THREE.AdditiveBlending,
     });
     this.edges = new THREE.LineSegments(g, m);
     this.scene.add(this.edges);
+    this.paintEdges();
+  }
+
+  /** Recolour edges from the activity of the neuron each one leaves. */
+  paintEdges() {
+    if (!this.edgeSrc) return;
+    const c = this.edgeColor, src = this.edgeSrc, inh = this.edgeInh, f = this.flash;
+    for (let e = 0; e < src.length; e++) {
+      const a = f ? f[src[e]] : 0;
+      // dim resting wire, warming toward the sign's colour as it carries signal
+      const base = 0.045;
+      let r, g, b;
+      if (inh[e]) { r = base + a * 0.62; g = base * 0.7 + a * 0.20; b = base * 0.6 + a * 0.14; }
+      else { r = base * 0.5 + a * 0.16; g = base + a * 0.50; b = base * 1.4 + a * 0.62; }
+      const o = e * 6;
+      c[o] = r; c[o + 1] = g; c[o + 2] = b;
+      c[o + 3] = r * 0.35; c[o + 4] = g * 0.35; c[o + 5] = b * 0.35;
+    }
+    this.edgeColorAttr.needsUpdate = true;
   }
 
   setEdgesVisible(v) { if (this.edges) this.edges.visible = v; }
@@ -258,6 +296,7 @@ export class BrainView {
     const decay = Math.exp(-dt / (this.reducedMotion ? 0.24 : 0.085));
     for (let i = 0; i < f.length; i++) if (f[i] > 0.002) f[i] *= decay; else f[i] = 0;
     this.flashAttr.needsUpdate = true;
+    if (this.edges.visible) this.paintEdges();
     this.controls.update();
     this.composer.render();
   }
