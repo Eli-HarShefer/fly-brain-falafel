@@ -43,6 +43,24 @@ const MIN_PATIENCE = 11;
 const RAMP_SECONDS = 260;
 const TAPE_EVERY = 100;
 
+/**
+ * What the fly is thinking. The joke is the deadpan: a fruit fly with 4,798
+ * neurons taking a counter job extremely seriously, and having complicated
+ * feelings about swatting its own kind.
+ */
+const FLY_LINES = {
+  serve: ['יצא מושלם', 'הבא בתור', 'עוד אחת', 'תרשמו שאני זבוב', 'בלי לחץ'],
+  swat: ['סליחה, אחי', 'הוא ידע למה', 'זה או הוא או החומוס', 'קרוב משפחה. מצטער.',
+         'הגוף הענק החליט'],
+  spoil: ['נו באמת', 'איבדתי מגש', 'הוא ניצח'],
+  empty: ['נגמר החומוס', 'רץ למטבח', 'מישהו היה צריך למלא'],
+  stress: ['הוא מסתכל עליי', 'אני עובד! אני עובד!', 'יש לי 4,798 נוירונים בסך הכל',
+           'לא נולדתי בשביל זה', 'עוד שנייה', 'בן אדם, אני זבוב'],
+  tape: ['מוזיקה. סוף סוף.', 'כולם נרגעו'],
+  idle: ['בחיים לא טעמתי פלאפל', 'אני רואה ב-360 מעלות וזה עדיין קשה',
+         'המוח שלי במוזיאון', 'הכנפיים שלי 220 פעימות בשנייה'],
+};
+
 function randInt(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
 
 function mulberry32(a) {
@@ -79,6 +97,10 @@ export class FalafelGame {
     this.tapeFlash = 0;
     this.events = [];              // transient things the renderer animates
     this.lastGrab = null;
+    this.flyLine = null;
+    this.flyLineT = 0;
+    this.quipCooldown = 4;
+    this.nextIdleQuip = 12;
     this.spawnCustomer();
   }
 
@@ -226,11 +248,13 @@ export class FalafelGame {
     this.served += 1;
     this.plate = { pita: false, hummus: 0, balls: 0, salad: 0, chips: 0 };
     this.push('serve', stationAz('pita'), 'מנה!');
+    this.quip('serve', 0.3);
     if (this.score >= this.tapeAt) {
       this.tapeAt += TAPE_EVERY;
       this.tapeFlash = 1.6;
       for (const cu of this.customers) cu.stress = Math.max(0, cu.stress - 0.65);
       this.push('tape', 0, 'קלטת');
+      this.quip('tape');
     }
     if (!this.customers.length) this.spawnCustomer();
   }
@@ -248,9 +272,25 @@ export class FalafelGame {
       hit.fade = 0.55;
       this.score += 5;
       this.push('swat', hit.az, 'ססס!');
+      this.quip('swat');
       return true;
     }
     return false;
+  }
+
+  /**
+   * Give the fly something to say. Rationed hard: a line every few seconds is
+   * funny, a line every serve is noise, and the serves come thick and fast.
+   */
+  quip(kind, chance = 1) {
+    const pool = FLY_LINES[kind];
+    if (!pool) return;
+    if (this.quipCooldown > 0) return;
+    if (chance < 1 && this.rng() > chance) return;
+    this.flyLine = pool[randInt(this.rng, 0, pool.length - 1)];
+    this.flyLineT = 2.4;
+    this.quipCooldown = 7 + this.rng() * 5;
+    this.nextIdleQuip = 16 + this.rng() * 14;
   }
 
   push(kind, az, text) {
@@ -284,6 +324,15 @@ export class FalafelGame {
   update(dt) {
     if (this.over) return;
     this.t += dt;
+
+    // fly chatter: idle musings, plus a nervous line when the queue boils
+    if (this.flyLineT > 0) this.flyLineT -= dt;
+    if (this.quipCooldown > 0) this.quipCooldown -= dt;
+    this.nextIdleQuip -= dt;
+    if (this.nextIdleQuip <= 0) {
+      const c0 = this.current;
+      this.quip(c0 && c0.stress > 0.6 ? 'stress' : 'idle');
+    }
 
     for (const e of this.events) e.life -= dt * 1.4;
     this.events = this.events.filter((e) => e.life > 0);
@@ -322,6 +371,7 @@ export class FalafelGame {
         if (pest.landed > 2.4 && !this.spoiled[pest.tray]) {
           this.spoiled[pest.tray] = true;
           this.push('spoil', pest.az, 'התקלקל');
+          this.quip('spoil');
           pest.dead = true;
           pest.fade = 0.35;
         }

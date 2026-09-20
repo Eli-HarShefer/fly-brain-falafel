@@ -22,7 +22,7 @@ export const MKS = [
     suit: '#1b2431', tie: '#2f6fb5', skin: '#dbab80',
     hair: { style: 'swept', color: '#e8e5df' },
     head: null, beard: null, glasses: null,
-    lines: ['יש לי ישיבה בעוד רגע', 'זה ייקח עוד הרבה?'],
+    lines: ['יש לי ישיבה בעוד רגע', 'זה ייקח עוד הרבה?', 'אני מכיר את בעל הדוכן', 'בלי חריף, יש לי ראיון'],
   },
   {
     id: 'bengvir',
@@ -32,7 +32,7 @@ export const MKS = [
     suit: '#222a33', tie: '#8c2f2a', skin: '#d8a578',
     hair: { style: 'short', color: '#1d1713' },
     head: 'kippah-black', beard: 'full', glasses: 'rect',
-    lines: ['אני רוצה את זה עכשיו!', 'מי אחראי פה?'],
+    lines: ['אני רוצה את זה עכשיו!', 'מי אחראי פה?', 'תביא לי את המנהל', 'זה לוקח יותר מדי זמן'],
   },
   {
     id: 'smotrich',
@@ -42,7 +42,7 @@ export const MKS = [
     suit: '#2a3340', tie: '#4a6f8c', skin: '#dbab80',
     hair: { style: 'short', color: '#2b2119' },
     head: 'kippah-knit', beard: 'goatee', glasses: 'rect',
-    lines: ['כמה זה עולה?', 'יש פה חריגה מהתקציב'],
+    lines: ['כמה זה עולה?', 'יש פה חריגה מהתקציב', 'אפשר חשבונית?', 'המחיר הזה לא מאושר'],
   },
   {
     id: 'deri',
@@ -52,7 +52,7 @@ export const MKS = [
     suit: '#1a1a20', tie: '#3b3b46', skin: '#d6a074',
     hair: { style: 'short', color: '#8a8378' },
     head: 'hat', beard: 'full-grey', glasses: 'rect',
-    lines: ['בסבלנות, בסבלנות', 'תן לי מנה גדולה'],
+    lines: ['בסבלנות, בסבלנות', 'תן לי מנה גדולה', 'הכל בסדר, קח את הזמן', 'שים עוד חומוס'],
   },
   {
     id: 'levin',
@@ -62,7 +62,7 @@ export const MKS = [
     suit: '#242c38', tie: '#5c6b7a', skin: '#dbab80',
     hair: { style: 'side', color: '#6f6a62' },
     head: null, beard: 'moustache', glasses: 'round',
-    lines: ['יש פה נוהל ברור', 'אני מבקש רפורמה בתור'],
+    lines: ['יש פה נוהל ברור', 'אני מבקש רפורמה בתור', 'מי קבע את הסדר הזה?', 'יש פה בעיה מבנית'],
   },
   {
     id: 'barkat',
@@ -72,7 +72,7 @@ export const MKS = [
     suit: '#2d3542', tie: '#3f8f78', skin: '#dbab80',
     hair: { style: 'bald', color: '#9a9287' },
     head: null, beard: null, glasses: null,
-    lines: ['אפשר לייעל את זה', 'זמן זה כסף'],
+    lines: ['אפשר לייעל את זה', 'זמן זה כסף', 'בסטארטאפ זה היה לוקח דקה', 'איפה האוטומציה?'],
   },
   {
     id: 'struck',
@@ -83,7 +83,7 @@ export const MKS = [
     suit: '#3a2f42', tie: null, skin: '#dbab80',
     hair: { style: 'none', color: '#2b2119' },
     head: 'scarf', beard: null, glasses: 'round',
-    lines: ['בלי חומוס בבקשה', 'נו, כבר חצי שעה'],
+    lines: ['בלי חומוס בבקשה', 'נו, כבר חצי שעה', 'אני ממתינה יפה', 'תזדרז בבקשה'],
   },
   {
     id: 'golan',
@@ -94,7 +94,7 @@ export const MKS = [
     suit: '#42303a', tie: null, skin: '#e0b48a',
     hair: { style: 'long', color: '#c9a45e' },
     head: null, beard: null, glasses: null,
-    lines: ['אני ממהרת!', 'תצלם אותי עם הפלאפל'],
+    lines: ['אני ממהרת!', 'תצלם אותי עם הפלאפל', 'יש לי ראיון בעוד רבע שעה', 'בלי פחמימות. טוב, עם.'],
   },
   {
     id: 'karhi',
@@ -104,7 +104,7 @@ export const MKS = [
     suit: '#26303c', tie: '#7a4a8c', skin: '#d8a578',
     hair: { style: 'short', color: '#1d1713' },
     head: 'kippah-knit', beard: 'stubble', glasses: null,
-    lines: ['יש פה קליטה?', 'עוד שתי דקות ואני הולך'],
+    lines: ['יש פה קליטה?', 'עוד שתי דקות ואני הולך', 'הרשת פה איומה', 'שולח הודעה ובא'],
   },
   {
     id: 'zohar',
@@ -114,7 +114,7 @@ export const MKS = [
     suit: '#232b36', tie: '#c26b3a', skin: '#d8a578',
     hair: { style: 'short', color: '#241c16' },
     head: null, beard: 'stubble', glasses: null,
-    lines: ['תכף מתחיל משחק', 'שים הרבה צ׳יפס'],
+    lines: ['תכף מתחיל משחק', 'שים הרבה צ׳יפס', 'עוד צ׳יפס. עוד.', 'המשחק מתחיל ב-9'],
   },
   {
     id: 'saar',
@@ -124,7 +124,7 @@ export const MKS = [
     suit: '#2b333d', tie: '#3f5c8c', skin: '#dbab80',
     hair: { style: 'side', color: '#8f8a82' },
     head: null, beard: null, glasses: 'rect',
-    lines: ['אני עובר לתור השני', 'זה לא מה שסיכמנו'],
+    lines: ['אני עובר לתור השני', 'זה לא מה שסיכמנו', 'אמרו לי חמש דקות', 'אני שוקל את האפשרויות'],
   },
   {
     id: 'eliyahu',
@@ -134,7 +134,7 @@ export const MKS = [
     suit: '#2a2f26', tie: '#6b7a4a', skin: '#d8a578',
     hair: { style: 'short', color: '#3a2b1f' },
     head: 'kippah-knit', beard: 'full', glasses: null,
-    lines: ['שים חריף', 'אני לא ממהר... בעצם כן'],
+    lines: ['שים חריף', 'אני לא ממהר... בעצם כן', 'עוד חריף', 'זה לא מספיק חריף'],
   },
 ];
 

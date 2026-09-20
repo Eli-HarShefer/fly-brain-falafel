@@ -6,8 +6,8 @@
  * which is what the steering circuit is actually computing.
  */
 import {
-  C, circle, rr, drawTray, drawHand, drawCustomer, drawStress, drawPest,
-  drawPita, FOOD, drawNameplate, drawGrumble,
+  C, circle, rr, drawTray, drawFly, drawCustomer, drawStress, drawPest,
+  drawPita, FOOD, drawNameplate, drawGrumble, drawThought,
 } from './art.js';
 import { STATIONS, TRAY_IDS } from './orders.js';
 
@@ -35,6 +35,7 @@ export class StandRenderer {
     this.snap = 0;
     this.spray = 0;
     this.sprayAz = 0;
+    this.tilt = 0;
     this.resize();
   }
 
@@ -67,11 +68,11 @@ export class StandRenderer {
     this.customers(ctx, game, t);
     this.orderBoard(ctx, game);
     this.counter(ctx);
-    this.gaze(ctx, game, handAz, neural);
+    this.gaze(ctx, game, handAz, neural, t);
     this.stations(ctx, game, handAz, t);
-    this.plate(ctx, game);
+    this.plate(ctx, game, t);
     this.pests(ctx, game, t);
-    this.hand(ctx, handAz, neural);
+    this.fly(ctx, game, handAz, neural, t);
     this.effects(ctx, game, t);
     if (game.tapeFlash > 0) this.tape(ctx, game, t);
   }
@@ -187,31 +188,50 @@ export class StandRenderer {
     ctx.restore();
   }
 
-  /** Where the fly is looking, tinted by how hard LC10a is firing. */
-  gaze(ctx, game, handAz, neural) {
+  /**
+   * Where the fly is headed. Deliberately loud: without a clear marker it is
+   * impossible to tell whether the fly is doing the right thing, which is the
+   * whole thing you are meant to be watching.
+   */
+  gaze(ctx, game, handAz, neural, t) {
     const g = game.goal();
     if (!g || game.over) return;
     const from = azToPos(handAz);
     const to = azToPos(g.az);
     const drive = neural ? Math.min(1, neural.lcDrive / 60) : 0.4;
+    const pulse = 0.5 + Math.sin(t * 5) * 0.5;
 
+    // sight line from the fly to its target, brightness = how hard LC10a fires
     ctx.save();
-    ctx.setLineDash([5, 6]);
-    ctx.lineDashOffset = -performance.now() * 0.02;
-    ctx.strokeStyle = 'rgba(122,214,235,' + (0.18 + drive * 0.45).toFixed(3) + ')';
-    ctx.lineWidth = 1.6;
+    ctx.setLineDash([5, 7]);
+    ctx.lineDashOffset = -t * 40;
+    ctx.strokeStyle = 'rgba(122,214,235,' + (0.22 + drive * 0.5).toFixed(3) + ')';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(from.x, from.y - 26);
-    ctx.lineTo(to.x, to.y - 10);
+    ctx.moveTo(from.x, from.y - 40);
+    ctx.lineTo(to.x, to.y - 14);
     ctx.stroke();
     ctx.restore();
 
-    // goal marker
-    const pulse = 0.5 + Math.sin(performance.now() * 0.005) * 0.5;
-    ctx.strokeStyle = 'rgba(122,214,235,' + (0.35 + pulse * 0.4).toFixed(3) + ')';
-    ctx.lineWidth = 2;
-    circle(ctx, to.x, to.y - 10, 26 + pulse * 4);
+    // target ring
+    ctx.strokeStyle = 'rgba(245,204,114,' + (0.45 + pulse * 0.45).toFixed(3) + ')';
+    ctx.lineWidth = 3;
+    circle(ctx, to.x, to.y, 40 + pulse * 5);
     ctx.stroke();
+
+    // a big bouncing arrow, so the target is unmissable
+    const ay = to.y - 74 - pulse * 7;
+    ctx.fillStyle = 'rgba(245,204,114,0.96)';
+    ctx.beginPath();
+    ctx.moveTo(to.x, ay + 22);
+    ctx.lineTo(to.x - 13, ay);
+    ctx.lineTo(to.x - 5.5, ay);
+    ctx.lineTo(to.x - 5.5, ay - 15);
+    ctx.lineTo(to.x + 5.5, ay - 15);
+    ctx.lineTo(to.x + 5.5, ay);
+    ctx.lineTo(to.x + 13, ay);
+    ctx.closePath();
+    ctx.fill();
   }
 
   stations(ctx, game, handAz, t) {
@@ -269,27 +289,81 @@ export class StandRenderer {
     ctx.restore();
   }
 
-  plate(ctx, game) {
-    const x = VW / 2, y = 566;
-    rr(ctx, x - 96, y - 26, 192, 52, 12);
-    ctx.fillStyle = 'rgba(12,9,7,0.75)'; ctx.fill();
-    ctx.strokeStyle = 'rgba(255,183,101,0.2)'; ctx.lineWidth = 1.2; ctx.stroke();
+  /**
+   * The objective bar: what the fly is doing right now, and how far through the
+   * order it is. This is the single most important thing on the canvas, so it
+   * gets the width and the contrast.
+   */
+  plate(ctx, game, t) {
+    const y = 566, w = 700, x = VW / 2;
+    rr(ctx, x - w / 2, y - 34, w, 66, 14);
+    ctx.fillStyle = 'rgba(10,8,6,0.92)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,183,101,0.3)'; ctx.lineWidth = 1.4; ctx.stroke();
+
+    const c = game.current;
+    const g = game.goal();
+    ctx.direction = 'rtl';
+
+    // ---- right side: the current instruction --------------------------------
+    const rx = x + w / 2 - 20;
+    ctx.textAlign = 'right';
+    ctx.font = '500 11px Heebo, sans-serif';
+    ctx.fillStyle = C.inkDim;
+    ctx.fillText('הזבוב עכשיו', rx, y - 14);
+
+    let verb = 'מחכה';
+    if (g) {
+      if (g.reason === 'pita') verb = 'לוקח פיתה';
+      else if (g.reason === 'fill') verb = 'ממלא ' + LABEL[g.id];
+      else if (g.reason === 'restock') verb = 'מחזיר ' + LABEL[g.id];
+      else if (String(g.reason).startsWith('empty')) verb = 'רץ למטבח';
+      else if (g.reason === 'done') verb = 'מגיש';
+    }
+    ctx.font = '800 21px Heebo, sans-serif';
+    ctx.fillStyle = C.lamp;
+    ctx.fillText(verb, rx, y + 12);
+    if (g && LABEL[g.id] && FOOD[g.id]) {
+      FOOD[g.id](ctx, rx - ctx.measureText(verb).width - 22, y + 4, 0.78);
+    }
+
+    // ---- left side: the dish so far -----------------------------------------
+    const lx = x - w / 2 + 22;
+    ctx.textAlign = 'left';
+    ctx.font = '500 11px Heebo, sans-serif';
+    ctx.fillStyle = C.inkDim;
+    ctx.fillText('המנה ביד', lx, y - 14);
 
     if (!game.plate.pita) {
-      ctx.textAlign = 'center';
-      ctx.direction = 'rtl';
-      ctx.font = '500 12px Heebo, sans-serif';
-      ctx.fillStyle = C.inkDim;
-      ctx.fillText('אין פיתה ביד', x, y + 5);
-      return;
+      ctx.font = '600 14px Heebo, sans-serif';
+      ctx.fillStyle = 'rgba(179,165,149,0.8)';
+      ctx.fillText('ריק', lx, y + 12);
+    } else {
+      drawPita(ctx, lx + 20, y + 12, 0.8, true);
+      let i = 0;
+      for (const k of TRAY_IDS) {
+        for (let n = 0; n < game.plate[k]; n++) {
+          FOOD[k](ctx, lx + 48 + i * 19, y + 4, 0.58);
+          i++;
+        }
+      }
     }
-    drawPita(ctx, x, y + 8, 1.05, true);
-    let i = 0;
-    for (const k of TRAY_IDS) {
-      for (let n = 0; n < game.plate[k]; n++) {
-        const ox = -58 + i * 17;
-        FOOD[k](ctx, x + ox, y - 6, 0.52);
-        i++;
+
+    // ---- middle: progress pips per ingredient --------------------------------
+    if (c) {
+      let px = x - 110;
+      ctx.textAlign = 'center';
+      for (const k of TRAY_IDS) {
+        const need = c.order[k];
+        if (!need) continue;
+        const have = game.plate[k];
+        FOOD[k](ctx, px, y - 10, 0.62);
+        for (let i = 0; i < need; i++) {
+          const done = i < have;
+          circle(ctx, px - (need - 1) * 5 + i * 10, y + 13, 3.8);
+          ctx.fillStyle = done ? C.ok : 'rgba(255,255,255,0.18)';
+          ctx.fill();
+        }
+        px += Math.max(34, need * 12 + 20);
       }
     }
   }
@@ -318,10 +392,37 @@ export class StandRenderer {
     }
   }
 
-  hand(ctx, handAz, neural) {
+  fly(ctx, game, handAz, neural, t) {
     const p = azToPos(handAz);
-    const active = neural ? neural.onTarget : false;
-    drawHand(ctx, p.x, p.y - 30, p.a, this.snap, active);
+    // bank into the turn by the size of the steering command
+    const steer = neural ? Math.max(-1, Math.min(1, neural.steerHz / 170)) : 0;
+    this.tilt += (steer - this.tilt) * 0.18;
+
+    // whatever it is holding right now
+    let carrying = null;
+    if (game.carrying) carrying = game.carrying;
+    else if (game.plate.pita) carrying = 'pita';
+
+    drawFly(ctx, p.x, p.y - 42, {
+      tilt: this.tilt,
+      wing: t,
+      snap: this.snap,
+      onTarget: neural ? neural.onTarget : false,
+      carrying,
+      stress: game.current ? game.current.stress : 0,
+      lunge: this.spray,
+    });
+
+    // what the fly is thinking about all this
+    if (game.flyLine && game.flyLineT > 0) {
+      const a = Math.min(1, game.flyLineT / 0.5);
+      ctx.save();
+      ctx.globalAlpha = a;
+      // keep the bubble inside the canvas even at the edges of the sweep
+      const bx = Math.max(120, Math.min(VW - 120, p.x));
+      drawThought(ctx, bx, p.y - 96, game.flyLine);
+      ctx.restore();
+    }
   }
 
   effects(ctx, game, t) {

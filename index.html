@@ -32,15 +32,41 @@
     <div class="stat"><span class="stat__label">מהירות מוח</span><span class="stat__value" id="stat-speed">1.0×</span></div>
   </div>
   <div class="topbar__actions">
+    <button class="btn" id="btn-help" type="button" aria-label="מה קורה פה">?</button>
     <button class="btn" id="btn-pause" type="button" aria-pressed="false">השהה</button>
     <button class="btn btn--primary" id="btn-restart" type="button">התחל מחדש</button>
   </div>
 </header>
 
+<div class="intro" id="intro" hidden>
+  <div class="intro__card" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+    <h2 id="intro-title">מה קורה פה?</h2>
+    <p class="intro__lead">
+      מוח של <strong>זבוב פירות אמיתי</strong> — 4,798 נוירונים ו-116,960 סינפסות שחולצו
+      מהקונקטום של FlyWire — מפעיל דוכן פלאפל. הזבוב לא מתוכנת לשחק. הוא רואה מגש,
+      מכוון אליו, ותופס; החיווט האמיתי של המוח הוא שמחליט.
+    </p>
+    <p class="intro__goal">
+      <strong>המשימה של הזבוב:</strong> לקחת פיתה, למלא אותה בדיוק לפי ההזמנה,
+      ולהגיש לפני שהלקוח מאבד סבלנות. וגם לסטור לזבובים שמתיישבים על האוכל.
+    </p>
+    <ol class="intro__list">
+      <li><b>הדוכן</b> — הזבוב עם הכובע עף בין המגשים. החץ הצהוב מראה לאן הוא הולך עכשיו,
+        והשורה למטה אומרת מה הוא עושה ומה כבר יש לו ביד.</li>
+      <li><b>המוח</b> — כל נקודה היא נוירון אמיתי במיקום האנטומי שלו, נדלקת כשהיא יורה.
+        הצביעו על נוירון כדי לזהות אותו.</li>
+      <li><b>המסלול</b> — המעגל שמקבל את ההחלטה, מהעין ועד השריר.</li>
+      <li><b>ניסויים</b> — כבו חלקים מהמוח וראו את הזבוב נשבר בזמן אמת.</li>
+    </ol>
+    <button class="btn btn--primary" id="intro-close" type="button">בוא נראה אותו עובד</button>
+  </div>
+</div>
+
 <main class="stage">
   <section class="pane pane--game" aria-label="דוכן הפלאפל">
     <div class="pane__head">
       <h2>הדוכן</h2>
+      <p class="pane__sub">הזבוב עף בין המגשים ומרכיב מנות · החץ הצהוב = לאן הוא הולך</p>
       <span class="tag tag--logic">לוגיקת משחק</span>
     </div>
     <div class="canvas-wrap">
@@ -57,6 +83,7 @@
   <section class="pane pane--brain" aria-label="המוח התלת-ממדי">
     <div class="pane__head">
       <h2>המוח</h2>
+      <p class="pane__sub">כל נקודה = נוירון אמיתי במיקומו · הצבע עליו כדי לזהות</p>
       <span class="tag tag--neural">קונקטום אמיתי</span>
     </div>
     <div class="canvas-wrap canvas-wrap--brain">
@@ -74,8 +101,8 @@
 <section class="circuit" aria-label="תרשים המעגל">
   <div class="circuit__head">
     <h3>המסלול</h3>
+    <p class="pane__sub">המעגל שמחליט · עובי = סינפסות · כחול מעורר, אדום מעכב</p>
     <span class="tag tag--neural">קונקטום אמיתי</span>
-    <span class="circuit__note">עובי הקו = מספר הסינפסות · צבע = סימן הסינפסה</span>
   </div>
   <canvas id="pathway" height="190" role="img"
     aria-label="תרשים חי של מעגל המרדף: LC10a אל AOTU אל DNa02, ו-LPLC2 אל DNp01"></canvas>
@@ -91,7 +118,7 @@
     <canvas id="traces" height="150" role="img" aria-label="עקבות קצב ירי של הנוירונים היורדים"></canvas>
   </div>
   <div class="tel tel--controls">
-    <div class="tel__head"><h3>ניסויים</h3><span class="tel__note">נגעים ובקרות</span></div>
+    <div class="tel__head"><h3>ניסויים</h3><span class="tel__note">כבו חלק מהמוח</span></div>
     <div class="controls" id="controls"></div>
   </div>
 </section>

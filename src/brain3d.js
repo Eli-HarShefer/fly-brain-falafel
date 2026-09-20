@@ -117,12 +117,19 @@ export class BrainView {
     this.controls.enablePan = false;
     this.controls.minDistance = 0.9;
     this.controls.maxDistance = 5;
-    // the orbit and the spike strobe are JS-driven, so the CSS media query does
-    // not cover them; honour the preference here too
+    // The brain always turns - a still point cloud reads as a picture, a
+    // turning one reads as an object. Reduced motion slows it and calms the
+    // spike strobe rather than freezing the scene outright.
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    this.controls.autoRotate = !this.reducedMotion;
-    this.controls.autoRotateSpeed = 0.42;
-    this.controls.addEventListener('start', () => { this.controls.autoRotate = false; });
+    this.controls.autoRotate = true;
+    this.controls.autoRotateSpeed = this.reducedMotion ? 0.5 : 0.95;
+    this.idleSpin = this.controls.autoRotateSpeed;
+    // pause while the user is dragging, then drift back on
+    this.resumeIn = 0;
+    this.controls.addEventListener('start', () => {
+      this.controls.autoRotate = false;
+      this.resumeIn = 2.2;
+    });
 
     this.buildCloud(cloud);
     this.buildCircuit(circuit, meta);
@@ -360,6 +367,11 @@ export class BrainView {
     // slower decay when reduced motion is requested: same information, less strobe
     const decay = Math.exp(-dt / (this.reducedMotion ? 0.24 : 0.085));
     for (let i = 0; i < f.length; i++) if (f[i] > 0.002) f[i] *= decay; else f[i] = 0;
+    if (this.resumeIn > 0) {
+      this.resumeIn -= dt;
+      if (this.resumeIn <= 0) this.controls.autoRotate = true;
+    }
+
     // keep hover and selection visibly lit so they can be found again
     if (this.hovered >= 0) f[this.hovered] = Math.max(f[this.hovered], 0.75);
     if (this.selected >= 0) f[this.selected] = 1;

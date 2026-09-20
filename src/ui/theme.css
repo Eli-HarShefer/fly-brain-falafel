@@ -188,9 +188,21 @@ a:hover { color: var(--ink); }
   border-radius: var(--r-lg);
   padding: 12px;
   min-width: 0;
+  /* grid items default to min-height:auto, which lets the canvas inside push
+     the pane past the stage cap */
+  min-height: 0;
 }
-.pane__head { display: flex; align-items: center; gap: 10px; }
+.pane__head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .pane__head h2 { font-size: 0.92rem; font-weight: 700; }
+.pane__sub {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  line-height: 1.35;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.circuit__head .pane__sub { flex: 1 1 240px; }
 
 .tag {
   font-size: 0.66rem;
@@ -210,7 +222,18 @@ a:hover { color: var(--ink); }
   overflow: hidden;
   background: oklch(0.045 0 0);
 }
-.canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+/* Absolutely positioned so the canvas can never contribute intrinsic size back
+   into layout. Its width/height attributes give it an aspect ratio, and with
+   the canvas in flow that becomes a feedback loop: resize sets the attributes
+   from the box, the new ratio resizes the box, and the pane grows without
+   bound. Taking it out of flow breaks the cycle. */
+.canvas-wrap canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 #game { object-fit: contain; }
 .canvas-wrap--brain { background: oklch(0.03 0 0); cursor: grab; }
 .canvas-wrap--brain:active { cursor: grabbing; }
@@ -281,6 +304,64 @@ a:hover { color: var(--ink); }
 .neuron-tip em { font-style: normal; color: var(--n-aotu); }
 .neuron-tip .tip__row { display: flex; gap: 8px; justify-content: space-between; }
 .neuron-tip .tip__pin { color: var(--ink-muted); font-size: 0.62rem; }
+
+/* ---------- intro explainer ---------- */
+.intro[hidden] { display: none; }
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-boot);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: oklch(0.05 0 0 / 0.86);
+  overflow-y: auto;
+}
+.intro__card {
+  max-width: 62ch;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
+  display: grid;
+  gap: 12px;
+  animation: introIn 320ms var(--ease);
+}
+@keyframes introIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.intro__card h2 { font-size: 1.3rem; font-weight: 800; }
+.intro__lead { margin: 0; color: var(--ink-2); line-height: 1.6; font-size: 0.92rem; }
+.intro__lead strong { color: var(--ink); }
+.intro__goal {
+  margin: 0;
+  padding: 11px 13px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.intro__goal strong { color: var(--primary-glow); }
+.intro__list {
+  margin: 0;
+  padding-inline-start: 20px;
+  display: grid;
+  gap: 7px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+.intro__list b { color: var(--ink); font-weight: 600; }
+.intro__card .btn { justify-self: start; margin-block-start: 4px; }
+
+#btn-help {
+  inline-size: 34px;
+  padding-inline: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
 
 /* ---------- circuit diagram ---------- */
 .circuit {
@@ -384,7 +465,11 @@ a:hover { color: var(--ink); }
    exactly at the fold, which makes the page look finished and hides the lesion
    controls below it. Cap the stage so a sliver of telemetry always shows. */
 @media (min-width: 901px) {
-  .stage { max-block-size: 58vh; }
+  /* A definite height, not just a cap: the canvases are absolutely positioned
+     so they contribute no intrinsic size, and the panes would otherwise
+     collapse to nothing. This height flows down to the canvas wrappers. */
+  /* flex:1 from the base rule would override block-size on the main axis */
+  .stage { flex: none; block-size: 58vh; min-block-size: 400px; }
 }
 
 /* ---------- responsive ---------- */

@@ -219,40 +219,190 @@ export function drawTray(ctx, x, y, id, level, spoiled, glow) {
   ctx.restore();
 }
 
-/** Tongs. Opens on approach, snaps shut on a grab. */
-export function drawHand(ctx, x, y, angle, snap, active) {
+/**
+ * The fly itself.
+ *
+ * This is the thing the whole project is about, so it gets drawn properly: a
+ * Drosophila with the red compound eyes, beating wings and dangling legs,
+ * wearing a cook's toque because it is working a falafel counter.
+ *
+ * Its body language is driven straight off the circuit. It banks into a turn by
+ * the size of the steering command, hovers level and slows its wings when
+ * AOTU019 says it is on target, dips to grab, and lunges when the Giant Fiber
+ * fires. Watching it work is the point.
+ *
+ * @param opts {tilt, wing, snap, onTarget, carrying, stress, lunge}
+ */
+export function drawFly(ctx, x, y, opts) {
+  const {
+    tilt = 0, wing = 0, snap = 0, onTarget = false,
+    carrying = null, stress = 0, lunge = 0,
+  } = opts;
+
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  const spread = 0.34 - snap * 0.3;
+  ctx.translate(x, y + snap * 9 + lunge * 14);
+  // banks into the turn, and leans forward when it lunges
+  ctx.rotate(tilt * 0.5 + lunge * 0.3);
 
-  ctx.strokeStyle = active ? C.steelLite : C.steel;
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  const beat = onTarget ? 26 : 46;                 // slower hover when settled
+  const flap = Math.abs(Math.sin(wing * beat));
+  const bob = Math.sin(wing * (onTarget ? 5 : 9)) * (onTarget ? 1.1 : 2.2);
+  ctx.translate(0, bob);
+
+  // --- motion blur behind the wings ------------------------------------------
+  ctx.save();
+  ctx.globalAlpha = 0.20 + flap * 0.22;
+  ctx.fillStyle = '#cfe6f0';
   for (const sgn of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(0, -30);
-    ctx.quadraticCurveTo(sgn * 11, -8, sgn * Math.sin(spread) * 21, 15);
-    ctx.stroke();
-  }
-  ctx.beginPath();
-  ctx.moveTo(0, -42);
-  ctx.lineTo(0, -28);
-  ctx.lineWidth = 7;
-  ctx.strokeStyle = C.steelDark;
-  ctx.stroke();
-
-  if (snap > 0.02) {
     ctx.save();
-    ctx.globalAlpha = snap;
-    circle(ctx, 0, 14, 16 + snap * 10);
-    ctx.strokeStyle = 'rgba(255,183,101,0.75)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.translate(sgn * 7, -11);
+    ctx.rotate(sgn * (0.5 + flap * 0.65));
+    ctx.beginPath();
+    ctx.ellipse(sgn * 13, -3, 17, 7.5, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
   ctx.restore();
+
+  // --- legs -------------------------------------------------------------------
+  ctx.strokeStyle = '#3a2a18';
+  ctx.lineWidth = 1.7;
+  ctx.lineCap = 'round';
+  const reach = snap * 7;
+  for (const [lx, ly, dx, dy] of [
+    [-7, 6, -9, 12], [-2, 8, -4, 15], [4, 8, 4, 15], [8, 6, 10, 12],
+  ]) {
+    ctx.beginPath();
+    ctx.moveTo(lx, ly);
+    ctx.quadraticCurveTo(lx + dx * 0.5, ly + dy * 0.6 + reach,
+                         lx + dx, ly + dy + reach * 1.4);
+    ctx.stroke();
+  }
+
+  // --- abdomen: striped, the Drosophila silhouette ----------------------------
+  const grad = ctx.createLinearGradient(0, -6, 0, 16);
+  grad.addColorStop(0, '#d9a33f');
+  grad.addColorStop(1, '#8a5f22');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.ellipse(0, 6, 10.5, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(40,26,12,0.85)';
+  for (const [sy, sw] of [[3, 9.8], [8, 8.8], [12.5, 6.4]]) {
+    ctx.beginPath();
+    ctx.ellipse(0, sy, sw, 2.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // --- thorax ------------------------------------------------------------------
+  ctx.fillStyle = '#6b4a20';
+  ctx.beginPath();
+  ctx.ellipse(0, -7, 9.5, 8.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,220,170,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(-3, -10, 4, 3, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // --- apron ------------------------------------------------------------------
+  ctx.fillStyle = '#efe7d8';
+  ctx.beginPath();
+  ctx.moveTo(-6, -3);
+  ctx.lineTo(6, -3);
+  ctx.quadraticCurveTo(7, 10, 0, 12);
+  ctx.quadraticCurveTo(-7, 10, -6, -3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#c9bda6';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // --- head --------------------------------------------------------------------
+  ctx.fillStyle = '#7a5525';
+  circle(ctx, 0, -18, 7.6);
+  ctx.fill();
+
+  // compound eyes, the signature
+  const eye = stress > 0.72 ? '#ff5a3c' : '#e0392b';
+  for (const sgn of [-1, 1]) {
+    ctx.fillStyle = eye;
+    ctx.beginPath();
+    ctx.ellipse(sgn * 5.2, -19.5, 4.6, 5.6, sgn * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.ellipse(sgn * 6.3, -21.6, 1.5, 1.9, sgn * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // antennae
+  ctx.strokeStyle = '#4a3418';
+  ctx.lineWidth = 1.3;
+  for (const sgn of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(sgn * 2.2, -23);
+    ctx.quadraticCurveTo(sgn * 4, -27.5, sgn * 2.6, -30);
+    ctx.stroke();
+    ctx.fillStyle = '#4a3418';
+    circle(ctx, sgn * 2.6, -30.4, 1.5);
+    ctx.fill();
+  }
+
+  // --- toque --------------------------------------------------------------------
+  ctx.fillStyle = '#f7f2ea';
+  ctx.beginPath();
+  ctx.ellipse(0, -26.5, 8, 3.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-7, -27);
+  ctx.quadraticCurveTo(-9, -38, -2.5, -36);
+  ctx.quadraticCurveTo(0, -41, 3, -36);
+  ctx.quadraticCurveTo(9, -38, 7, -27);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.07)';
+  ctx.beginPath();
+  ctx.ellipse(0, -27, 8, 2.4, 0, 0, Math.PI);
+  ctx.fill();
+
+  // --- what it is carrying --------------------------------------------------------
+  if (carrying === 'pita') {
+    ctx.save();
+    ctx.translate(0, 19 + reach);
+    ctx.rotate(-tilt * 0.3);
+    drawPita(ctx, 0, 0, 0.62, true);
+    ctx.restore();
+  } else if (carrying && FOOD[carrying]) {
+    ctx.save();
+    ctx.translate(0, 19 + reach);
+    FOOD[carrying](ctx, 0, 0, 0.62);
+    ctx.restore();
+  }
+
+  // sweat when the queue is boiling over
+  if (stress > 0.65) {
+    ctx.globalAlpha = (stress - 0.65) / 0.35;
+    ctx.fillStyle = '#9fd8ef';
+    const sx = 10 + Math.sin(wing * 6) * 1.5;
+    ctx.beginPath();
+    ctx.ellipse(sx, -24, 2, 2.8, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+
+  // on-target halo, drawn unrotated so it reads as a UI cue
+  if (onTarget) {
+    ctx.save();
+    ctx.globalAlpha = 0.5 + Math.sin(wing * 8) * 0.18;
+    ctx.strokeStyle = '#f5cc72';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 5]);
+    circle(ctx, x, y + 2, 30);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 const INK = '#1b1410';
@@ -506,6 +656,29 @@ export function drawNameplate(ctx, x, y, name, party, dim) {
   ctx.font = '400 9.5px Heebo, sans-serif';
   ctx.fillStyle = 'rgba(179,165,149,0.7)';
   ctx.fillText(party, x, y + 12);
+  ctx.restore();
+}
+
+/** Thought bubble for the fly, with the little trailing dots. */
+export function drawThought(ctx, x, y, text) {
+  ctx.save();
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'center';
+  ctx.font = '600 13px Heebo, sans-serif';
+  const w = Math.max(74, ctx.measureText(text).width + 28);
+  const h = 28;
+
+  ctx.fillStyle = 'rgba(247,242,234,0.96)';
+  rr(ctx, x - w / 2, y - h, w, h, 13);
+  ctx.fill();
+  // trailing thought dots down toward the fly
+  for (const [dx, dy, r] of [[2, 7, 4.2], [7, 16, 2.8], [11, 23, 1.8]]) {
+    circle(ctx, x + dx, y + dy, r);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#2a211a';
+  ctx.fillText(text, x, y - 9);
   ctx.restore();
 }
 

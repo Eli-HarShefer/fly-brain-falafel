@@ -133,6 +133,24 @@ async function main() {
     if (pinned < 0) tip.hidden = true;
   });
 
+  // --- first-run explainer --------------------------------------------------
+  const intro = $('intro');
+  const SEEN = 'fly-falafel:intro-seen';
+  let seen = false;
+  try { seen = localStorage.getItem(SEEN) === '1'; } catch { /* private mode */ }
+  const openIntro = () => { intro.hidden = false; $('intro-close').focus(); };
+  const closeIntro = () => {
+    intro.hidden = true;
+    try { localStorage.setItem(SEEN, '1'); } catch { /* ignore */ }
+  };
+  if (!seen) openIntro();
+  $('intro-close').addEventListener('click', closeIntro);
+  $('btn-help').addEventListener('click', openIntro);
+  intro.addEventListener('click', (e) => { if (e.target === intro) closeIntro(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !intro.hidden) closeIntro();
+  });
+
   const restart = () => {
     game.reset();
     brain.reset();
