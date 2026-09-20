@@ -78,6 +78,61 @@ async function main() {
     },
   });
 
+  // --- neuron inspector -----------------------------------------------------
+  const ROLE_HE = {
+    lc10a: 'גלאי מטרה', lplc2: 'גלאי לומינג', aotu: 'ממסר היגוי',
+    cx: 'קומפלקס מרכזי', dn: 'נוירון יורד', vis: 'ראייה', other: 'שכן במעגל',
+  };
+  const SIDE_HE = { left: 'שמאל', right: 'ימין', center: 'מרכז' };
+  const tip = $('neuron-tip');
+  const brainCanvas = $('brain');
+  let pinned = -1;
+  let dragging = false, downAt = null;
+
+  function showTip(i, clientX, clientY) {
+    const d = view.describe(i);
+    if (!d) { tip.hidden = true; return; }
+    const box = brainCanvas.getBoundingClientRect();
+    tip.style.left = (clientX - box.left) + 'px';
+    tip.style.top = (clientY - box.top) + 'px';
+    tip.innerHTML =
+      '<b>' + d.type + '</b>' +
+      '<div class="tip__row"><span>' + (ROLE_HE[d.role] || d.role) + '</span>' +
+      '<em>' + (SIDE_HE[d.side] || d.side) + '</em></div>' +
+      '<div class="tip__row"><span>קצב</span><em>' + d.rate.toFixed(0) + ' Hz</em></div>' +
+      '<div class="tip__row"><span>נכנסות / יוצאות</span><em>' + d.inDeg + ' / ' + d.outDeg + '</em></div>' +
+      (d.nt ? '<div class="tip__row"><span>מוליך</span><em>' + d.nt + '</em></div>' : '') +
+      '<div class="tip__pin">' + (pinned === i ? 'לחץ שוב כדי לשחרר' : 'לחץ כדי לנעוץ') + '</div>';
+    tip.hidden = false;
+  }
+
+  brainCanvas.addEventListener('pointerdown', (e) => { dragging = false; downAt = { x: e.clientX, y: e.clientY }; });
+  brainCanvas.addEventListener('pointermove', (e) => {
+    if (downAt && (Math.abs(e.clientX - downAt.x) > 3 || Math.abs(e.clientY - downAt.y) > 3)) dragging = true;
+    const box = brainCanvas.getBoundingClientRect();
+    const nx = ((e.clientX - box.left) / box.width) * 2 - 1;
+    const ny = -((e.clientY - box.top) / box.height) * 2 + 1;
+    const hit = view.pick(nx, ny);
+    view.setHovered(hit);
+    if (hit >= 0) showTip(hit, e.clientX, e.clientY);
+    else if (pinned < 0) tip.hidden = true;
+    else showTip(pinned, e.clientX, e.clientY);
+  });
+  brainCanvas.addEventListener('pointerup', (e) => {
+    downAt = null;
+    if (dragging) { dragging = false; return; }
+    const box = brainCanvas.getBoundingClientRect();
+    const nx = ((e.clientX - box.left) / box.width) * 2 - 1;
+    const ny = -((e.clientY - box.top) / box.height) * 2 + 1;
+    const hit = view.pick(nx, ny);
+    pinned = hit >= 0 && hit !== pinned ? hit : -1;
+    view.setSelected(pinned);
+  });
+  brainCanvas.addEventListener('pointerleave', () => {
+    view.setHovered(-1);
+    if (pinned < 0) tip.hidden = true;
+  });
+
   const restart = () => {
     game.reset();
     brain.reset();
@@ -189,7 +244,7 @@ async function main() {
     }
 
     raster.overlay();
-    view.render(dt);
+    view.render(dt, brain.rate);
   }
 
   window.__fly.tick = tick;

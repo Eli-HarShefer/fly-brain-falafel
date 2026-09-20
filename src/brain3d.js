@@ -15,6 +15,9 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+/** How close a ray has to pass to a neuron to pick it, in world units. */
+const PICK_RADIUS = 0.016;
+
 export const ROLE_COLORS = {
   lc10a: 0x86d9ec,
   lplc2: 0xb28ae8,
@@ -124,6 +127,7 @@ export class BrainView {
     this.buildCloud(cloud);
     this.buildCircuit(circuit, meta);
     this.buildEdges(circuit, meta);
+    this.buildPicking(circuit);
 
     // orbit around where the mass actually is, not the bounding-box midpoint
     this.controls.target.copy(this.center);
@@ -281,6 +285,66 @@ export class BrainView {
     this.edgeColorAttr.needsUpdate = true;
   }
 
+  /**
+   * In-degree per neuron, and a raycaster, so a neuron can be identified by
+   * pointing at it. The 3D view is a map of a real brain; being able to ask
+   * "what is that one" is most of what makes it worth looking at.
+   */
+  buildPicking(circuit) {
+    const n = circuit.nNeurons;
+    this.outDeg = new Int32Array(n);
+    this.inDeg = new Int32Array(n);
+    for (let a = 0; a < n; a++) {
+      this.outDeg[a] = circuit.indptr[a + 1] - circuit.indptr[a];
+      for (let k = circuit.indptr[a]; k < circuit.indptr[a + 1]; k++) this.inDeg[circuit.indices[k]]++;
+    }
+    this.raycaster = new THREE.Raycaster();
+    this.raycaster.params.Points.threshold = PICK_RADIUS;
+    this.pointer = new THREE.Vector2();
+    this.selected = -1;
+    this.hovered = -1;
+  }
+
+  /**
+   * @param {number} nx normalised device x in [-1,1]
+   * @param {number} ny normalised device y in [-1,1]
+   * @returns neuron index, or -1
+   */
+  pick(nx, ny) {
+    if (!this.raycaster) return -1;
+    this.pointer.set(nx, ny);
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const hits = this.raycaster.intersectObject(this.points, false);
+    if (!hits.length) return -1;
+    // prefer an identified neuron over a background one at similar depth
+    let best = hits[0];
+    const roles = this.meta.roles;
+    for (const h of hits) {
+      if (h.distance > best.distance * 1.25) break;
+      if (roles[h.index] !== 'other' && roles[best.index] === 'other') best = h;
+    }
+    return best.index;
+  }
+
+  setHovered(i) { this.hovered = i; }
+  setSelected(i) { this.selected = i; }
+
+  /** Everything worth showing about one neuron. */
+  describe(i) {
+    if (i < 0 || i >= this.n) return null;
+    const m = this.meta;
+    return {
+      index: i,
+      type: m.types[i],
+      side: m.sides[i],
+      role: m.roles[i],
+      nt: m.nt ? m.nt[i] : null,
+      rate: this.lastRate ? this.lastRate[i] : 0,
+      outDeg: this.outDeg[i],
+      inDeg: this.inDeg[i],
+    };
+  }
+
   setEdgesVisible(v) { if (this.edges) this.edges.visible = v; }
   setCloudVisible(v) { if (this.cloud) this.cloud.visible = v; }
 
@@ -290,11 +354,15 @@ export class BrainView {
     for (let i = 0; i < count; i++) f[buf[i]] = 1;
   }
 
-  render(dt) {
+  render(dt, rates) {
+    if (rates) this.lastRate = rates;
     const f = this.flash;
     // slower decay when reduced motion is requested: same information, less strobe
     const decay = Math.exp(-dt / (this.reducedMotion ? 0.24 : 0.085));
     for (let i = 0; i < f.length; i++) if (f[i] > 0.002) f[i] *= decay; else f[i] = 0;
+    // keep hover and selection visibly lit so they can be found again
+    if (this.hovered >= 0) f[this.hovered] = Math.max(f[this.hovered], 0.75);
+    if (this.selected >= 0) f[this.selected] = 1;
     this.flashAttr.needsUpdate = true;
     if (this.edges.visible) this.paintEdges();
     this.controls.update();
