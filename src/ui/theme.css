@@ -380,6 +380,13 @@ a:hover { color: var(--ink); }
 }
 .credits p { margin: 0 0 5px; }
 
+/* On the two-column layout the stage plus the circuit strip would end almost
+   exactly at the fold, which makes the page look finished and hides the lesion
+   controls below it. Cap the stage so a sliver of telemetry always shows. */
+@media (min-width: 901px) {
+  .stage { max-block-size: 58vh; }
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 1180px) {
   .telemetry { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
