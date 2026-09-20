@@ -287,5 +287,16 @@ export class PathwayView {
     for (let i = 0; i < 4; i++) {
       ctx.fillText(labels[i], this.colX[i], this.h - 4 * d);
     }
+
+    // What each row of the circuit actually evolved for. Without this the
+    // diagram is two anonymous chains; with it, it is a courtship circuit and
+    // an escape circuit doing a day job.
+    ctx.textAlign = 'right';
+    ctx.font = '700 ' + (10 * d).toFixed(0) + 'px Heebo, sans-serif';
+    const rx = this.w - 6 * d;
+    ctx.fillStyle = 'rgba(134,217,236,0.75)';
+    ctx.fillText('מסלול החיזור — מרדף אחרי מטרה', rx, this.padY + this.rowH * 0.28);
+    ctx.fillStyle = 'rgba(178,138,232,0.75)';
+    ctx.fillText('מסלול הבריחה — סטירה לזבוב', rx, this.padY + this.rowH * 3.62);
   }
 }

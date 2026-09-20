@@ -84,6 +84,24 @@ async function main() {
     cx: 'קומפלקס מרכזי', dn: 'נוירון יורד', vis: 'ראייה', other: 'שכן במעגל',
   };
   const SIDE_HE = { left: 'שמאל', right: 'ימין', center: 'מרכז' };
+  // what the cell is actually for in a living fly
+  const PURPOSE = {
+    LC10a: 'מרדף מטרה · חיזור',
+    LPLC2: 'גלאי התקרבות · בריחה',
+    LC18: 'ראייה · אובייקטים',
+    AOTU019: 'מרכז השדה · עצור סיבוב',
+    AOTU025: 'פריפריה · הנע סיבוב',
+    DNa02: 'פקודת פנייה לגוף',
+    DNa03: 'פקודת פנייה לגוף',
+    DNa04: 'נוירון יורד',
+    DNp01: 'Giant Fiber · קפיצת בריחה',
+    DNp09: 'נוירון יורד',
+    EPG: 'מצפן · כיוון הראש',
+    Delta7: 'טבעת המצפן',
+    PFL3: 'כיוון מול מטרה → פנייה',
+    PFL2: 'כיוון מול מטרה',
+    ER4d: 'עיכוב טבעת המצפן',
+  };
   const tip = $('neuron-tip');
   const brainCanvas = $('brain');
   let pinned = -1;
@@ -95,8 +113,10 @@ async function main() {
     const box = brainCanvas.getBoundingClientRect();
     tip.style.left = (clientX - box.left) + 'px';
     tip.style.top = (clientY - box.top) + 'px';
+    const purpose = PURPOSE[d.type];
     tip.innerHTML =
       '<b>' + d.type + '</b>' +
+      (purpose ? '<div class="tip__purpose">' + purpose + '</div>' : '') +
       '<div class="tip__row"><span>' + (ROLE_HE[d.role] || d.role) + '</span>' +
       '<em>' + (SIDE_HE[d.side] || d.side) + '</em></div>' +
       '<div class="tip__row"><span>קצב</span><em>' + d.rate.toFixed(0) + ' Hz</em></div>' +

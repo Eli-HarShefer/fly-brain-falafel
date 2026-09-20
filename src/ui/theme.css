@@ -304,6 +304,12 @@ a:hover { color: var(--ink); }
 .neuron-tip em { font-style: normal; color: var(--n-aotu); }
 .neuron-tip .tip__row { display: flex; gap: 8px; justify-content: space-between; }
 .neuron-tip .tip__pin { color: var(--ink-muted); font-size: 0.62rem; }
+.neuron-tip .tip__purpose {
+  font-family: var(--font);
+  font-size: 0.72rem;
+  color: var(--n-lc10a);
+  margin-block-end: 3px;
+}
 
 /* ---------- intro explainer ---------- */
 .intro[hidden] { display: none; }
@@ -393,6 +399,66 @@ a:hover { color: var(--ink); }
   .circuit canvas { height: 230px; }
   .circuit__note { display: none; }
 }
+
+/* ---------- evolutionary origins ---------- */
+.origins {
+  margin: 0 var(--gutter) 12px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 14px 14px 12px;
+  display: grid;
+  gap: 12px;
+}
+.origins__head { display: grid; gap: 3px; }
+.origins__head h3 { font-size: 0.9rem; font-weight: 700; }
+.origins__grid {
+  display: grid;
+  /* exactly three circuits, so state that rather than letting auto-fit invent
+     empty tracks on a wide screen */
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 820px) {
+  .origins__grid { grid-template-columns: repeat(3, 1fr); }
+}
+.origin {
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  padding: 12px 13px;
+  display: grid;
+  gap: 7px;
+  align-content: start;
+}
+.origin__tag {
+  justify-self: start;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--c);
+  background: color-mix(in oklab, var(--c) 18%, transparent);
+}
+.origin code {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  direction: ltr;
+  text-align: start;
+}
+.origin p { margin: 0; font-size: 0.78rem; line-height: 1.55; color: var(--ink-muted); }
+.origin p b { color: var(--ink-2); font-weight: 600; }
+.origin__here { color: var(--ink-2) !important; }
+.origin__here em { font-style: normal; color: var(--primary-glow); font-weight: 600; }
+.origins__note {
+  margin: 0;
+  padding: 11px 13px;
+  background: oklch(0.2 0.045 22);
+  border-radius: var(--r-sm);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.origins__note strong { color: var(--primary-glow); }
 
 /* ---------- telemetry ---------- */
 .telemetry {
