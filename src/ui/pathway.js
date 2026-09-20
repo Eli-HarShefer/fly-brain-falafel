@@ -95,7 +95,9 @@ export class PathwayView {
 
   layout() {
     const padX = 66 * this.dpr, padY = 16 * this.dpr;
-    const colX = [padX, this.w * 0.37, this.w * 0.66, this.w - padX * 0.7];
+    // the output column carries a 88px gauge, so keep half of it clear of the
+    // right edge rather than letting it spill
+    const colX = [padX, this.w * 0.37, this.w * 0.66, this.w - 62 * this.dpr];
     const rows = 5;
     const rowH = (this.h - padY * 2) / rows;
     for (const n of this.nodes.values()) {
@@ -234,7 +236,7 @@ export class PathwayView {
     ctx.direction = 'rtl';
 
     // steering gauge: DNa02 imbalance
-    const gw = 96 * d, gh = 10 * d;
+    const gw = 88 * d, gh = 10 * d;
     const gy = top + this.rowH * 0.7;
     ctx.fillStyle = 'rgba(255,255,255,0.07)';
     ctx.beginPath(); ctx.roundRect(x - gw / 2, gy, gw, gh, gh / 2); ctx.fill();
