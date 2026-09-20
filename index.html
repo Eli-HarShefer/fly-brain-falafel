@@ -102,6 +102,16 @@
 
 <p id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
 
+<section class="circuit vision-sec" aria-label="שדה הראייה של הזבוב">
+  <div class="circuit__head">
+    <h3>מה הזבוב רואה</h3>
+    <p class="pane__sub">שדה הראייה שלו ברגע זה · הגבשושית היא המקום שבו המוח "רואה" את המטרה</p>
+    <span class="tag tag--neural">קונקטום אמיתי</span>
+  </div>
+  <canvas id="vision" height="210" role="img"
+    aria-label="שדה הראייה של הזבוב: פעילות LC10a לאורך האזימוט, עין שמאל ועין ימין"></canvas>
+</section>
+
 <section class="circuit" aria-label="תרשים המעגל">
   <div class="circuit__head">
     <h3>המסלול</h3>
@@ -110,6 +120,36 @@
   </div>
   <canvas id="pathway" height="190" role="img"
     aria-label="תרשים חי של מעגל המרדף: LC10a אל AOTU אל DNa02, ו-LPLC2 אל DNp01"></canvas>
+</section>
+
+<section class="model" aria-label="איך המודל עובד">
+  <div class="model__text">
+    <h3>איך עובד המודל של המוח</h3>
+    <p>
+      כל נוירון כאן הוא <strong>דלי מתח דולף</strong>. זה כל המודל, וארבעה כללים מרכיבים אותו:
+    </p>
+    <ol class="model__rules">
+      <li><b>נצבר.</b> מטען שמגיע מנוירונים אחרים מעלה את המתח.</li>
+      <li><b>דולף.</b> המתח חוזר לאט למנוחה (−52mV), בקבוע זמן של 20 אלפיות שנייה.</li>
+      <li><b>יורה.</b> אם המתח חצה את הסף (−45mV) — הנוירון יורה ספייק.</li>
+      <li><b>מתאפס.</b> חוזר למנוחה, וחירש לחלוטין למשך 2.2 אלפיות שנייה.</li>
+    </ol>
+    <p>
+      הספייק מגיע לנוירונים הבאים <b>1.8 אלפיות שנייה</b> אחר כך, לאורך הסינפסות
+      האמיתיות. המשקל של כל חיבור הוא <b>מספר הסינפסות × סימן המוליך העצבי</b> —
+      אצטילכולין מעורר, GABA וגלוטמט מעכבים. זהו. אין כאן שום למידה.
+    </p>
+    <p class="model__cal">
+      כיול אחד ויחיד: מקדם גלובלי של 0.11 על כל המשקלים. משקלי קונקטום גולמיים
+      מכניסים את הרשת לרוויה — LPLC2 לבדו מספק 822 סינפסות × 0.275mV = 226mV
+      ל-Giant Fiber. זה מספר אחד שמוכפל בהכל, כך שכל היחסים שהקונקטום קובע נשמרים.
+    </p>
+  </div>
+  <div class="model__scope">
+    <canvas id="model" height="180" role="img"
+      aria-label="מתח הממברנה של נוירון בודד לאורך זמן, עם קו הסף וקו המנוחה"></canvas>
+    <p class="model__hint">הצביעו על נוירון במוח התלת-ממדי כדי למדוד אותו כאן</p>
+  </div>
 </section>
 
 <section class="origins" aria-label="מאיפה הגיעו המעגלים">

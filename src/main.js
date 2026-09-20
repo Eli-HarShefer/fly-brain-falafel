@@ -16,6 +16,10 @@ import { BrainView, parseCloud, ROLE_COLORS, ROLE_LABELS } from './brain3d.js';
 import { SpikeRaster, TracePanel } from './ui/panels.js';
 import { buildControls } from './ui/controls.js';
 import { PathwayView } from './ui/pathway.js';
+import { VisionView } from './ui/vision.js';
+import { ModelView } from './ui/model.js';
+import { STATIONS } from './game/orders.js';
+import { FOOD } from './game/art.js';
 
 const $ = (id) => document.getElementById(id);
 const bootStatus = $('boot-status');
@@ -50,6 +54,11 @@ async function main() {
   const raster = new SpikeRaster($('raster'), meta);
   const traces = new TracePanel($('traces'));
   const pathway = new PathwayView($('pathway'), circuit, meta);
+  const vision = new VisionView($('vision'), meta, FOOD, STATIONS);
+  const model = new ModelView($('model'), meta);
+  // scope a descending neuron by default: it integrates visibly rather than
+  // sitting at rest or saturating
+  brain.probe = (meta.groups.DNa02_L || [0])[0];
 
   $('stat-neurons').textContent = meta.nNeurons.toLocaleString('he-IL');
   $('raster-note').textContent = meta.nEdges.toLocaleString('he-IL') + ' סינפסות';
@@ -147,6 +156,7 @@ async function main() {
     const hit = view.pick(nx, ny);
     pinned = hit >= 0 && hit !== pinned ? hit : -1;
     view.setSelected(pinned);
+    if (pinned >= 0) { brain.probe = pinned; model.trace.length = 0; }
   });
   brainCanvas.addEventListener('pointerleave', () => {
     view.setHovered(-1);
@@ -186,16 +196,18 @@ async function main() {
   });
 
   const ro = new ResizeObserver(() => {
-    stand.resize(); view.resize(); raster.resize(); traces.resize(); pathway.resize();
+    stand.resize(); view.resize(); raster.resize(); traces.resize(); pathway.resize(); vision.resize(); model.resize();
   });
   ro.observe($('game').parentElement);
   ro.observe($('brain').parentElement);
   ro.observe($('raster'));
   ro.observe($('traces'));
   ro.observe($('pathway'));
+  ro.observe($('vision'));
+  ro.observe($('model'));
 
   // handy for poking at the running system from the console
-  window.__fly = { brain, controller, game, view, stand, pathway, meta,
+  window.__fly = { brain, controller, game, view, stand, pathway, vision, model, meta,
     get handAz() { return handAz; }, get paused() { return paused; } };
 
   $('boot').dataset.done = '1';
@@ -261,6 +273,8 @@ async function main() {
       };
       stand.draw(game, handAz, tSec, dt, neural);
       pathway.draw(brain, out, dt);
+      vision.draw(brain, game, handAz, out, dt);
+      model.draw(brain, brain.probe);
 
       $('stat-score').textContent = game.score.toLocaleString('he-IL');
       $('stat-served').textContent = game.served.toLocaleString('he-IL');
@@ -279,6 +293,8 @@ async function main() {
       raster.push(null, 0, true);
       stand.draw(game, handAz, tSec, dt, controller.lastOut || null);
       pathway.draw(brain, controller.lastOut || null, dt);
+      vision.draw(brain, game, handAz, controller.lastOut || null, dt);
+      model.draw(brain, brain.probe);
     }
 
     raster.overlay();

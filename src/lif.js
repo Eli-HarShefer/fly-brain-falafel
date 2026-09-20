@@ -116,6 +116,14 @@ export class FlyBrain {
     this.spikeCount = 0;
     this.totalSpikes = 0;
 
+    // Optional single-neuron oscilloscope. Set `probe` to a neuron index and
+    // its membrane potential is recorded every step, at full 0.2 ms
+    // resolution, which is the only way to actually see integrate-and-fire
+    // happen: a frame boundary is 16.7 ms and a spike lasts 2.2 ms.
+    this.probe = -1;
+    this.probeBuf = new Float32Array(4096);
+    this.probeCount = 0;
+
     this.decayMem = Math.exp(-DT / TAU_MEM);
     this.decaySyn = Math.exp(-DT / TAU_SYN);
     this.tauRate = 60; // ms
@@ -204,7 +212,12 @@ export class FlyBrain {
     let spikeCount = 0;
     let active = this.activeCount;
 
+    const probe = this.probe;
+    const probeBuf = this.probeBuf;
+    let probeCount = 0;
+
     for (let s = 0; s < steps; s++) {
+      if (probe >= 0 && probeCount < probeBuf.length) probeBuf[probeCount++] = v[probe];
       const slot = this.ringSlot;
       const base = slot * n;
 
@@ -301,6 +314,7 @@ export class FlyBrain {
     }
 
     this.activeCount = active;
+    this.probeCount = probeCount;
     this.spikeCount = spikeCount;
     this.totalSpikes += spikeCount;
 

@@ -388,6 +388,7 @@ a:hover { color: var(--ink); }
   font-family: var(--mono);
   margin-inline-start: auto;
 }
+.vision-sec canvas { height: 210px !important; }
 .circuit canvas {
   display: block;
   width: 100%;
@@ -398,6 +399,53 @@ a:hover { color: var(--ink); }
 @media (max-width: 700px) {
   .circuit canvas { height: 230px; }
   .circuit__note { display: none; }
+}
+
+/* ---------- how the model works ---------- */
+.model {
+  margin: 0 var(--gutter) 12px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 900px) {
+  .model { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: start; }
+}
+.model__text { display: grid; gap: 9px; align-content: start; }
+.model__text h3 { font-size: 0.9rem; font-weight: 700; }
+.model__text p {
+  margin: 0; font-size: 0.8rem; line-height: 1.6; color: var(--ink-muted);
+  max-width: 62ch;
+}
+.model__text strong { color: var(--primary-glow); }
+.model__text b { color: var(--ink-2); font-weight: 600; }
+.model__rules {
+  margin: 0;
+  padding-inline-start: 20px;
+  display: grid;
+  gap: 5px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+.model__rules b { color: var(--n-aotu); font-weight: 600; }
+.model__cal {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  font-size: 0.76rem !important;
+}
+.model__scope { display: grid; gap: 6px; }
+.model__scope canvas {
+  display: block; width: 100%; height: 180px;
+  border-radius: var(--r-sm); background: oklch(0.045 0 0);
+}
+.model__hint {
+  margin: 0; font-size: 0.68rem; color: var(--ink-muted);
+  font-family: var(--mono); text-align: center;
 }
 
 /* ---------- evolutionary origins ---------- */
