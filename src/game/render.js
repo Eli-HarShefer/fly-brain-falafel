@@ -296,13 +296,13 @@ export class StandRenderer {
 
   pests(ctx, game, t) {
     for (const p of game.pests) {
-      if (p.dead) continue;
+      if (p.dead && p.fade <= 0) continue;
       const base = azToPos(p.az);
       const fly = p.landed > 0
         ? { x: base.x, y: base.y - 22 }
         : { x: base.x + Math.sin(p.wobble * 0.7) * 40 * (1 - p.approach),
             y: base.y - 210 * (1 - p.approach) - 22 };
-      drawPest(ctx, fly.x, fly.y, p.approach, p.wobble, p.landed > 0);
+      drawPest(ctx, fly.x, fly.y, p.approach, p.wobble, p.landed > 0, p.dead ? p.fade : 0);
     }
 
     if (this.spray > 0.02) {

@@ -6,6 +6,9 @@
  * glasses, headwear, suit colour - and nothing here is meant as a real quote.
  * The grumbles are about falafel.
  *
+ * `f: true` marks a woman, so Hebrew verb forms agree (איבד / איבדה). Keep each
+ * entry's `lines` in the matching grammatical gender too.
+ *
  * Edit this list freely; everything downstream is data-driven. Drop an entry,
  * add one, change a colour, and the stand picks it up.
  */
@@ -76,6 +79,7 @@ export const MKS = [
     name: 'סטרוק',
     full: 'אורית סטרוק',
     party: 'הציונות הדתית',
+    f: true,
     suit: '#3a2f42', tie: null, skin: '#dbab80',
     hair: { style: 'none', color: '#2b2119' },
     head: 'scarf', beard: null, glasses: 'round',
@@ -86,6 +90,7 @@ export const MKS = [
     name: 'מאי גולן',
     full: 'מאי גולן',
     party: 'הליכוד',
+    f: true,
     suit: '#42303a', tie: null, skin: '#e0b48a',
     hair: { style: 'long', color: '#c9a45e' },
     head: null, beard: null, glasses: null,

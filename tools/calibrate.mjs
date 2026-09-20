@@ -39,7 +39,7 @@ console.log(['az'.padStart(5), 'LC_L'.padStart(7), 'LC_R'.padStart(7),
 for (const az of angles) {
   brain.reset();
   enc.begin();
-  enc.setTarget(az, 1);
+  enc.setScene([{ deg: az }], 1);
   enc.setHeading(0);
   brain.step(settle);
   brain.step(measure);

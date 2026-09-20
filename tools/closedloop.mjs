@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { FlyBrain, parseCircuit } from '../src/lif.js';
 import { FlyController } from '../src/controller.js';
+import { STATIONS } from '../src/game/orders.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const raw = readFileSync(join(root, 'public/data/circuit.bin'));
@@ -24,7 +25,7 @@ const ctl = new FlyController(meta, brain);
 
 const TICK_MS = 1000 / 60;
 const TIMEOUT_MS = 6000;
-const TARGETS = [-58, -42, -26, -12, 12, 26, 42, 58];
+const TARGETS = STATIONS.filter((s) => s.id !== 'kitchen').map((s) => s.az);
 
 function runTrial(goalAz, startAz) {
   brain.reset();

@@ -13,6 +13,17 @@ import { Decoder } from './decode.js';
 export const TURN_GAIN = 6.0;
 export const MAX_TURN_DEG_S = 230;
 
+/**
+ * How hard to drive the central complex goal signal.
+ *
+ * tools/cxsweep.mjs measured this end to end: 0 and 0.5 both give 14/14 on
+ * target at ~3 deg, 1.0 drops to 10/14 at 40 deg, 1.5 collapses to 3/14. The
+ * pursuit pathway solves this task by itself and a strong PFL3 bias fights it,
+ * so the CX runs at a level where it is active and visible without steering the
+ * hand. See the note in README: this is a measured result, not a tuning fudge.
+ */
+export const CX_GOAL_DRIVE = 0.5;
+
 export class FlyController {
   constructor(meta, brain) {
     this.brain = brain;
@@ -38,9 +49,11 @@ export class FlyController {
 
     enc.begin();
     enc.setArousal(world.arousal ?? 1);
-    enc.setTarget(err, world.salience ?? 1);
+    // the object the fly is fixating, as an angle relative to the hand
+    enc.setScene([{ deg: err }], world.salience ?? 1);
     enc.setHeading(world.handAz);
-    enc.setGoal(world.goalAz, world.goalStrength ?? 1);
+    // and what it wants: supplied to the central complex, relative to heading
+    enc.setGoal(err, world.goalStrength ?? CX_GOAL_DRIVE);
     if (world.pests && world.pests.length) enc.setLooming(world.pests);
 
     // advance the brain by the same amount of time the world advanced

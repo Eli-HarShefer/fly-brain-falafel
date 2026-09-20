@@ -2,15 +2,16 @@
  * Bootstrap and main loop.
  *
  * The simulation runs on the main thread rather than in a Web Worker. The plan
- * called for a worker, but the engine measures 1.69 ms per frame against a
- * 16.67 ms budget (tools/bench.mjs), and the 3D view needs the spike buffer
- * every single frame - posting it across a worker boundary 60 times a second
- * would cost more than the simulation itself.
+ * called for a worker, but the engine measures ~2.1 ms per frame against a
+ * 16.67 ms budget (tools/bench.mjs, ~7.7x real time), and the 3D view needs the
+ * spike buffer every single frame - posting it across a worker boundary 60
+ * times a second would cost more than the simulation itself. A full game with
+ * all rendering measures ~4 ms per frame.
  */
 import { FlyBrain, parseCircuit } from './lif.js';
 import { FlyController } from './controller.js';
 import { FalafelGame } from './game/orders.js';
-import { StandRenderer, azToPos } from './game/render.js';
+import { StandRenderer } from './game/render.js';
 import { BrainView, parseCloud, ROLE_COLORS, ROLE_LABELS } from './brain3d.js';
 import { SpikeRaster, TracePanel } from './ui/panels.js';
 import { buildControls } from './ui/controls.js';
@@ -60,14 +61,14 @@ async function main() {
 
   let handAz = 0;
   let paused = false;
-  let speed = 1;
   let spikeWindow = 0;
   let spikeTimer = 0;
   let lesionActive = false;
+  let lastServed = -1;
 
   buildControls($('controls'), {
     brain, meta,
-    onSpeed: (v) => { speed = v; controller.simSpeed = v; $('stat-speed').textContent = v.toFixed(2).replace(/0$/, '') + '×'; },
+    onSpeed: (v) => { controller.simSpeed = v; $('stat-speed').textContent = v.toFixed(2).replace(/0$/, '') + '×'; },
     onEdges: (v) => view.setEdgesVisible(v),
     onCloud: (v) => view.setCloudVisible(v),
     onLesion: () => {
@@ -166,11 +167,16 @@ async function main() {
 
       $('stat-score').textContent = game.score.toLocaleString('he-IL');
       $('stat-served').textContent = game.served.toLocaleString('he-IL');
+      if (game.served !== lastServed) {
+        lastServed = game.served;
+        $('live').textContent = 'הוגשו ' + game.served + ' מנות, ניקוד ' + game.score;
+      }
 
       if (game.over) {
         $('gameover-sub').textContent = game.overReason +
           (lesionActive ? ' · עם נגע פעיל' : '');
         $('gameover').hidden = false;
+        $('live').textContent = 'המשחק נגמר. ' + game.overReason;
       }
     } else {
       raster.push(null, 0, true);

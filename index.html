@@ -44,7 +44,8 @@
       <span class="tag tag--logic">לוגיקת משחק</span>
     </div>
     <div class="canvas-wrap">
-      <canvas id="game" width="900" height="620"></canvas>
+      <canvas id="game" width="900" height="620" role="img"
+        aria-label="דוכן הפלאפל: היד נעה בין המגשים לפי פקודות ההיגוי מהמוח המדומה"></canvas>
       <div class="gameover" id="gameover" hidden>
         <p class="gameover__title">הלקוחות התפוצצו</p>
         <p class="gameover__sub" id="gameover-sub"></p>
@@ -59,21 +60,24 @@
       <span class="tag tag--neural">קונקטום אמיתי</span>
     </div>
     <div class="canvas-wrap canvas-wrap--brain">
-      <canvas id="brain"></canvas>
+      <canvas id="brain" role="img"
+        aria-label="תצוגה תלת-ממדית של קונקטום הזבוב; נוירונים מהבהבים במיקומם האנטומי כשהם יורים"></canvas>
       <div class="brain-legend" id="brain-legend"></div>
       <div class="brain-hint" id="brain-hint">גרור לסובב · גלגלת לזום</div>
     </div>
   </section>
 </main>
 
+<p id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+
 <section class="telemetry" aria-label="פעילות עצבית">
   <div class="tel tel--raster">
     <div class="tel__head"><h3>ספייקים</h3><span class="tel__note" id="raster-note">—</span></div>
-    <canvas id="raster" height="150"></canvas>
+    <canvas id="raster" height="150" role="img" aria-label="ראסטר ספייקים לפי קבוצת נוירונים"></canvas>
   </div>
   <div class="tel tel--traces">
     <div class="tel__head"><h3>נוירונים יורדים</h3><span class="tel__note">Hz</span></div>
-    <canvas id="traces" height="150"></canvas>
+    <canvas id="traces" height="150" role="img" aria-label="עקבות קצב ירי של הנוירונים היורדים"></canvas>
   </div>
   <div class="tel tel--controls">
     <div class="tel__head"><h3>ניסויים</h3><span class="tel__note">נגעים ובקרות</span></div>

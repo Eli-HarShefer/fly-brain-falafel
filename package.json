@@ -10,7 +10,9 @@
     "bench": "node tools/bench.mjs",
     "calibrate": "node tools/calibrate.mjs",
     "closedloop": "node tools/closedloop.mjs",
-    "extract": "python tools/extract_circuit.py"
+    "extract": "python tools/extract_circuit.py",
+    "cxsweep": "node tools/cxsweep.mjs",
+    "survival": "node tools/survival.mjs"
   },
   "keywords": [],
   "author": "",

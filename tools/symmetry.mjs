@@ -56,6 +56,5 @@ for (const name of ['AOTU019_L', 'AOTU019_R', 'AOTU025_L', 'AOTU025_R',
       }
     }
   }
-  console.log('  ' + name.padEnd(10) + ' exc ' + exc.toFixed(0).padStart(6) + '  inh ' + inh.toFixed(0).padStart(7) + '  net ' + (exc+inh).toFixed(0).padStart(6));//
-
+  console.log('  ' + name.padEnd(10) + ' exc ' + exc.toFixed(0).padStart(6) + '  inh ' + inh.toFixed(0).padStart(7) + '  net ' + (exc+inh).toFixed(0).padStart(6));
 }

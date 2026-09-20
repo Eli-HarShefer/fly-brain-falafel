@@ -35,6 +35,26 @@ export const ROLE_LABELS = {
 
 const CLOUD_MAGIC = 'FLYP';
 
+/**
+ * Background cloud tint per anatomical super-class, so the optic lobes separate
+ * from the central brain instead of the whole thing being one grey fog. Index
+ * order matches cloud.json superClasses.
+ * ascending, central, descending, endocrine, motor, optic, sensory,
+ * sensory_ascending, visual_centrifugal, visual_projection
+ */
+const CLOUD_TINT = [
+  [0.44, 0.50, 0.60],  // ascending
+  [0.42, 0.46, 0.56],  // central
+  [0.72, 0.46, 0.40],  // descending - warm, they are the output
+  [0.50, 0.46, 0.58],  // endocrine
+  [0.66, 0.50, 0.44],  // motor
+  [0.34, 0.50, 0.60],  // optic - the big cool mass
+  [0.52, 0.50, 0.44],  // sensory
+  [0.48, 0.50, 0.52],  // sensory_ascending
+  [0.40, 0.54, 0.58],  // visual_centrifugal
+  [0.40, 0.58, 0.66],  // visual_projection
+];
+
 export function parseCloud(buffer) {
   const dv = new DataView(buffer);
   const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
@@ -94,7 +114,10 @@ export class BrainView {
     this.controls.enablePan = false;
     this.controls.minDistance = 0.9;
     this.controls.maxDistance = 5;
-    this.controls.autoRotate = true;
+    // the orbit and the spike strobe are JS-driven, so the CSS media query does
+    // not cover them; honour the preference here too
+    this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.controls.autoRotate = !this.reducedMotion;
     this.controls.autoRotateSpeed = 0.42;
     this.controls.addEventListener('start', () => { this.controls.autoRotate = false; });
 
@@ -127,12 +150,19 @@ export class BrainView {
     }
     g.setAttribute('position', new THREE.BufferAttribute(p, 3));
 
+    const col = new Float32Array(cloud.n * 3);
+    for (let i = 0; i < cloud.n; i++) {
+      const t = CLOUD_TINT[cloud.group[i]] || CLOUD_TINT[1];
+      col[i * 3] = t[0]; col[i * 3 + 1] = t[1]; col[i * 3 + 2] = t[2];
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
     let cx = 0, cy = 0, cz = 0;
     for (let i = 0; i < cloud.n; i++) { cx += p[i * 3]; cy += p[i * 3 + 1]; cz += p[i * 3 + 2]; }
     this.center = new THREE.Vector3(cx / cloud.n, cy / cloud.n, cz / cloud.n);
 
     const m = new THREE.PointsMaterial({
-      color: 0x64768a,
+      vertexColors: true,
       size: 0.0050,
       sizeAttenuation: true,
       transparent: true,
@@ -224,7 +254,8 @@ export class BrainView {
 
   render(dt) {
     const f = this.flash;
-    const decay = Math.exp(-dt / 0.085);
+    // slower decay when reduced motion is requested: same information, less strobe
+    const decay = Math.exp(-dt / (this.reducedMotion ? 0.24 : 0.085));
     for (let i = 0; i < f.length; i++) if (f[i] > 0.002) f[i] *= decay; else f[i] = 0;
     this.flashAttr.needsUpdate = true;
     this.controls.update();

@@ -31,9 +31,16 @@ export const TRAY_MAX = 8;
 const STATION_BY_ID = Object.fromEntries(STATIONS.map((s) => [s.id, s]));
 export const stationAz = (id) => STATION_BY_ID[id].az;
 
-/** Patience, in seconds, before a customer boils over. Shrinks as it speeds up. */
+/**
+ * Patience, in seconds, before a customer boils over. Shrinks as it speeds up.
+ *
+ * The ramp runs long enough that an intact fly holds out for several minutes
+ * and then genuinely starts losing. An earlier setting topped out at 150 s and
+ * the fly simply never lost, which made the whole fail state unreachable.
+ */
 const BASE_PATIENCE = 34;
-const MIN_PATIENCE = 17;
+const MIN_PATIENCE = 11;
+const RAMP_SECONDS = 260;
 const TAPE_EVERY = 100;
 
 function randInt(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
@@ -75,7 +82,7 @@ export class FalafelGame {
     this.spawnCustomer();
   }
 
-  get difficulty() { return Math.min(1, this.t / 150); }
+  get difficulty() { return Math.min(1, this.t / RAMP_SECONDS); }
 
   get patience() {
     return BASE_PATIENCE - (BASE_PATIENCE - MIN_PATIENCE) * this.difficulty;
@@ -119,6 +126,7 @@ export class FalafelGame {
       speed: 0.13 + this.rng() * 0.09,
       landed: 0,
       dead: false,
+      fade: 0,        // seconds of death animation left
       wobble: this.rng() * 6.28,
     });
   }
@@ -237,6 +245,7 @@ export class FalafelGame {
     }
     if (hit && bd <= tol) {
       hit.dead = true;
+      hit.fade = 0.55;
       this.score += 5;
       this.push('swat', hit.az, 'ססס!');
       return true;
@@ -286,15 +295,17 @@ export class FalafelGame {
       c.stress = Math.min(1, c.stress + dt / p);
       if (c.stress >= 1) {
         this.over = true;
-        this.overReason = c.mk.full + ' איבד סבלנות אחרי ' + this.served + ' מנות';
+        const lost = c.mk.f ? 'איבדה' : 'איבד';
+        const dishes = this.served === 1 ? 'מנה אחת' : this.served + ' מנות';
+        this.overReason = c.mk.full + ' ' + lost + ' סבלנות אחרי ' + dishes;
         return;
       }
     }
     this.nextCustomer -= dt;
-    const maxQueue = 2 + Math.round(this.difficulty * 2);
+    const maxQueue = 2 + Math.round(this.difficulty * 3);
     if (this.nextCustomer <= 0 && this.customers.length < maxQueue) {
       this.spawnCustomer();
-      this.nextCustomer = 7 - this.difficulty * 3;
+      this.nextCustomer = 7 - this.difficulty * 4.4;
     }
 
     // pests
@@ -304,7 +315,7 @@ export class FalafelGame {
       this.nextPest = 11 - this.difficulty * 5.5;
     }
     for (const pest of this.pests) {
-      if (pest.dead) continue;
+      if (pest.dead) { pest.fade -= dt; continue; }
       pest.wobble += dt * 7;
       if (pest.landed > 0) {
         pest.landed += dt;
@@ -312,13 +323,15 @@ export class FalafelGame {
           this.spoiled[pest.tray] = true;
           this.push('spoil', pest.az, 'התקלקל');
           pest.dead = true;
+          pest.fade = 0.35;
         }
       } else {
         pest.approach += dt * pest.speed;
         if (pest.approach >= 1) { pest.approach = 1; pest.landed = 0.001; }
       }
     }
-    this.pests = this.pests.filter((x) => !x.dead || x.landed > 0 ? !x.dead : false);
+    // keep swatted pests around briefly so the spray has something to hit
+    this.pests = this.pests.filter((p) => !p.dead || p.fade > 0);
     if (this.pests.length > 5) this.pests.shift();
   }
 

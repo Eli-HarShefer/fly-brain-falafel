@@ -25,6 +25,8 @@ const BINOCULAR_DEG = 6;
 
 const EPG_WIDTH = 0.16;   // bump width as a fraction of the ring
 const GOAL_WIDTH = 0.19;
+/** Degrees of goal error that saturate the PFL3 left/right imbalance. */
+const PFL3_SATURATE_DEG = 40;
 
 function wrapDeg(d) {
   while (d > 180) d -= 360;
@@ -55,39 +57,68 @@ export class Encoder {
   setArousal(a) { this.arousal = Math.max(0.6, Math.min(2.2, a)); }
 
   /**
-   * Target-pursuit drive. `errDeg` is where the target sits relative to the
-   * hand: negative = left, positive = right. `salience` in [0,1] scales it.
+   * Object-fixation drive. `items` are the objects LC10a is responding to, each
+   * an angle relative to the hand: negative = left, positive = right.
    *
-   * The eye facing the target is driven; inside the binocular zone both are.
-   * Within an eye, the cells driven are those whose retinotopic proxy matches
-   * the target's eccentricity, so the position of the target is carried by
-   * *which* LC10a cells fire, not just how fast.
+   * Normally the controller passes a single item - the target the fly has
+   * settled on - because a fixating fly tracks one object, and LC10a is the
+   * stage that carries it. Passing the whole visible scene instead is supported
+   * and was tried: it makes the fly grab at whichever tray it reaches first,
+   * because AOTU019 signals "an object is centred", not "the right one is". See
+   * the note in README on why the goal stays a declared, non-neural input.
+   *
+   * The eye facing an object is driven; inside the binocular zone both are.
+   * Within an eye the cells driven are those whose retinotopic proxy matches
+   * that object's eccentricity, so position is carried by *which* LC10a cells
+   * fire, not just how fast.
    */
-  setTarget(errDeg, salience = 1) {
-    const e = wrapDeg(errDeg);
-    const ecc = Math.min(1, Math.abs(e) / FIELD_DEG);
-    const peak = MAX_LC10A_HZ * salience * this.arousal;
-    if (peak <= 0) return;
+  setScene(items, salience = 1) {
+    if (!items || !items.length) return;
+    const base = MAX_LC10A_HZ * salience * this.arousal;
+    if (base <= 0) return;
+    const accL = this._acc(this.lcL);
+    const accR = this._acc(this.lcR);
 
-    let wL = 0, wR = 0;
-    if (Math.abs(e) <= BINOCULAR_DEG) { wL = 1; wR = 1; }
-    else if (e < 0) { wL = 1; wR = 0.12; }
-    else { wL = 0.12; wR = 1; }
+    for (const it of items) {
+      const e = wrapDeg(it.deg);
+      const ecc = Math.min(1, Math.abs(e) / FIELD_DEG);
+      const peak = base * (it.weight ?? 1);
+      if (peak <= 1) continue;
 
-    this._drivRetino(this.lcL, ecc, peak * wL);
-    this._drivRetino(this.lcR, ecc, peak * wR);
+      let wL, wR;
+      if (Math.abs(e) <= BINOCULAR_DEG) { wL = 1; wR = 1; }
+      else if (e < 0) { wL = 1; wR = 0.12; }
+      else { wL = 0.12; wR = 1; }
+
+      this._accRetino(accL, this.lcL, ecc, peak * wL);
+      this._accRetino(accR, this.lcR, ecc, peak * wR);
+    }
+    this._flush(accL, this.lcL);
+    this._flush(accR, this.lcR);
   }
 
-  _drivRetino(list, ecc, peak) {
+  _acc(list) {
+    if (!this._scratch) this._scratch = new Map();
+    let a = this._scratch.get(list);
+    if (!a) { a = new Float32Array(list.length); this._scratch.set(list, a); }
+    else a.fill(0);
+    return a;
+  }
+
+  /** Objects overlap in the visual field, so each cell takes its strongest. */
+  _accRetino(acc, list, ecc, peak) {
     if (peak <= 0) return;
     const retino = this.retino;
-    const b = this.brain;
     for (let k = 0; k < list.length; k++) {
-      const i = list[k];
-      const d = (retino[i] - ecc) / RETINO_WIDTH;
+      const d = (retino[list[k]] - ecc) / RETINO_WIDTH;
       const r = peak * Math.exp(-0.5 * d * d);
-      if (r > 1) b.setExternal(i, r);
+      if (r > acc[k]) acc[k] = r;
     }
+  }
+
+  _flush(acc, list) {
+    const b = this.brain;
+    for (let k = 0; k < list.length; k++) if (acc[k] > 1) b.setExternal(list[k], acc[k]);
   }
 
   /**
@@ -121,19 +152,28 @@ export class Encoder {
   /**
    * Goal drive onto PFL3.
    *
-   * NOT NEURAL: which tray the fly should want is decided by the game-logic
+   * NOT NEURAL: *which* tray the fly should want is decided by the game-logic
    * layer, because reading an order board is not something any documented fly
-   * circuit does. What *is* neural is everything downstream - PFL3 compares this
-   * goal against the EPG heading and its contralateral projection onto DNa02
-   * turns that comparison into a steering command.
+   * circuit does. Everything downstream is: PFL3 compares that goal against the
+   * EPG heading, and because PFL3 projects contralaterally onto DNa02, the
+   * left/right imbalance becomes a turn.
+   *
+   * The two PFL3 populations sample the goal with opposite phase offsets, which
+   * is how the real circuit converts a heading-versus-goal difference into
+   * asymmetric descending drive (Hulse et al. 2021; Westeinde et al. 2024).
+   * Driving both halves identically - which an earlier version did - produces a
+   * perfectly symmetric output and no steering at all, which is why silencing
+   * the central complex then cost nothing.
+   *
+   * @param goalErrDeg goal direction relative to the current heading
    */
-  setGoal(goalDeg, strength = 1) {
-    const phase = ((wrapDeg(goalDeg) / 360) + 1) % 1;
+  setGoal(goalErrDeg, strength = 1) {
+    const e = wrapDeg(goalErrDeg);
+    const bias = Math.max(-1, Math.min(1, e / PFL3_SATURATE_DEG));
     const peak = MAX_GOAL_HZ * strength * this.arousal;
-    // PFL3 tiles the goal direction across the protocerebral bridge; use each
-    // population's index order as its phase.
-    this._bumpIndexed(this.pflL, phase, GOAL_WIDTH, peak);
-    this._bumpIndexed(this.pflR, phase, GOAL_WIDTH, peak);
+    const phase = ((e / 360) + 1) % 1;
+    this._bumpIndexed(this.pflL, phase, GOAL_WIDTH, peak * (0.5 - bias * 0.5));
+    this._bumpIndexed(this.pflR, phase, GOAL_WIDTH, peak * (0.5 + bias * 0.5));
   }
 
   _bump(list, phaseArr, centre, width, peak) {

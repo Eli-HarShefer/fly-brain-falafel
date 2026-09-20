@@ -1,10 +1,19 @@
 /**
  * Lesion and display controls.
  *
- * The lesions are the point: each one predicts a specific failure, and watching
+ * The lesions are the point: each one predicts a specific outcome, and watching
  * the prediction come true is the evidence that the wiring is doing the work
  * rather than decorating it. tools/closedloop.mjs measures the same thing
- * headlessly - intact 24/24 on target, scrambled 0/24.
+ * headlessly.
+ *
+ * The effects are graded, and the labels say which. tools/survival.mjs plays
+ * whole games to their end: intact lasts 443 s, scrambled and DNa02-silenced
+ * die at 33 s, and LPLC2-silenced still plays but loses 35% of its survival to
+ * spoiled trays. Silencing the central complex costs nothing measurable at all
+ * on this task - tools/cxsweep.mjs shows the pursuit pathway solves it alone.
+ *
+ * That last one is kept and labelled as the negative result it is. A panel of
+ * lesions that only ever confirms importance is not a set of controls.
  */
 
 export const LESIONS = [
@@ -30,13 +39,13 @@ export const LESIONS = [
   {
     id: 'lplc2',
     label: 'השתקת LPLC2',
-    desc: 'מפסיק לסטור לזבובים',
+    desc: 'לא סוטר — מגשים מתקלקלים, שורד 35% פחות',
     groups: ['LPLC2_L', 'LPLC2_R'],
   },
   {
     id: 'cx',
     label: 'השתקת הקומפלקס המרכזי',
-    desc: 'מאבד את המטרה, משוטט',
+    desc: 'לא פוגע — מעגל המרדף מספיק',
     groups: ['EPG', 'Delta7', 'PFL3_L', 'PFL3_R', 'PFL2_L', 'PFL2_R', 'ER4d_L', 'ER4d_R'],
   },
 ];

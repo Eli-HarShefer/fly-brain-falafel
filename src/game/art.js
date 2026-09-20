@@ -539,13 +539,19 @@ export function drawStress(ctx, x, y, stress) {
   ctx.fill();
 }
 
-/** Pest fly. `approach` 0..1 drives the looming size the circuit responds to. */
-export function drawPest(ctx, x, y, approach, wobble, landed) {
-  const s = 0.45 + approach * 0.95;
+/**
+ * Pest fly. `approach` 0..1 drives the looming size the circuit responds to.
+ * `fade` > 0 means it has been swatted: it tumbles and drops as it disappears.
+ */
+export function drawPest(ctx, x, y, approach, wobble, landed, fade = 0) {
+  const dying = fade > 0;
+  const k = dying ? Math.max(0, Math.min(1, fade / 0.55)) : 1;
+  const s = (0.45 + approach * 0.95) * (dying ? 0.6 + k * 0.4 : 1);
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(x, dying ? y + (1 - k) * 42 : y);
+  if (dying) ctx.globalAlpha = k;
   ctx.scale(s, s);
-  ctx.rotate(Math.sin(wobble) * 0.22);
+  ctx.rotate(dying ? (1 - k) * 4.2 : Math.sin(wobble) * 0.22);
 
   // wing blur
   ctx.fillStyle = C.pestWing;
@@ -563,7 +569,7 @@ export function drawPest(ctx, x, y, approach, wobble, landed) {
   circle(ctx, -2, -9.5, 1.7); ctx.fill();
   circle(ctx, 2, -9.5, 1.7); ctx.fill();
 
-  if (!landed) {
+  if (!landed && !dying) {
     ctx.strokeStyle = 'rgba(224,85,63,0.35)';
     ctx.lineWidth = 1.4;
     circle(ctx, 0, 0, 13 + approach * 9);
