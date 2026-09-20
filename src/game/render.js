@@ -27,6 +27,30 @@ export function azToPos(az) {
 
 const LABEL = { kitchen: 'מטבח', pita: 'פיתה', hummus: 'חומוס', balls: 'פלאפל', salad: 'סלט', chips: 'צ׳יפס' };
 
+const WALL_H = 330;
+
+/** Pre-render the tiled back wall to an offscreen canvas. Static, so once is enough. */
+function buildWall() {
+  const c = document.createElement('canvas');
+  c.width = VW; c.height = WALL_H;
+  const x = c.getContext('2d');
+  const TW = 54, TH = 40;
+  for (let ty = 0; ty < WALL_H; ty += TH) {
+    const offset = (ty / TH) % 2 ? TW / 2 : 0;
+    for (let tx = -TW; tx < VW + TW; tx += TW) {
+      // warm glazed tiles, brighter near the lamp
+      const dx = (tx + offset + TW / 2 - VW / 2) / VW;
+      const glow = Math.max(0, 1 - Math.abs(dx) * 2.1) * Math.max(0, 1 - ty / WALL_H);
+      x.fillStyle = 'rgba(' + Math.round(58 + glow * 66) + ',' +
+        Math.round(42 + glow * 40) + ',' + Math.round(32 + glow * 22) + ',0.55)';
+      x.beginPath();
+      x.roundRect(tx + offset + 1, ty + 1, TW - 2, TH - 2, 3);
+      x.fill();
+    }
+  }
+  return c;
+}
+
 export class StandRenderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -36,6 +60,7 @@ export class StandRenderer {
     this.spray = 0;
     this.sprayAz = 0;
     this.tilt = 0;
+    this.wall = buildWall();
     this.resize();
   }
 
@@ -70,6 +95,7 @@ export class StandRenderer {
     this.counter(ctx);
     this.gaze(ctx, game, handAz, neural, t);
     this.stations(ctx, game, handAz, t);
+    this.steam(ctx, game, t);
     this.plate(ctx, game, t);
     this.pests(ctx, game, t);
     this.fly(ctx, game, handAz, neural, t);
@@ -79,28 +105,85 @@ export class StandRenderer {
 
   bg(ctx, t) {
     const g = ctx.createLinearGradient(0, 0, 0, VH);
-    g.addColorStop(0, '#231913');
-    g.addColorStop(0.55, '#1a120e');
-    g.addColorStop(1, '#0e0907');
+    g.addColorStop(0, '#2b1e15');
+    g.addColorStop(0.5, '#1c1410');
+    g.addColorStop(1, '#0d0806');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, VW, VH);
 
+    // tiled back wall, drawn once and blitted: ~370 rounded rects per frame was
+    // costing 10 ms, and the tiles never change
+    ctx.drawImage(this.wall, 0, 0);
+
     // heat lamp cone
-    const lamp = ctx.createRadialGradient(VW / 2, 40, 20, VW / 2, 300, 520);
-    lamp.addColorStop(0, 'rgba(255,183,101,0.30)');
-    lamp.addColorStop(0.5, 'rgba(255,152,74,0.08)');
+    const lamp = ctx.createRadialGradient(VW / 2, 40, 20, VW / 2, 310, 540);
+    lamp.addColorStop(0, 'rgba(255,190,110,0.34)');
+    lamp.addColorStop(0.45, 'rgba(255,152,74,0.10)');
     lamp.addColorStop(1, 'rgba(255,152,74,0)');
     ctx.fillStyle = lamp;
     ctx.fillRect(0, 0, VW, VH);
 
     // lamp housing
-    ctx.fillStyle = '#2b2119';
+    ctx.fillStyle = '#31251b';
     ctx.beginPath();
     ctx.moveTo(VW / 2 - 60, 0); ctx.lineTo(VW / 2 + 60, 0);
     ctx.lineTo(VW / 2 + 34, 26); ctx.lineTo(VW / 2 - 34, 26);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = 'rgba(255,183,101,' + (0.75 + Math.sin(t * 3) * 0.06).toFixed(3) + ')';
+    const flicker = 0.78 + Math.sin(t * 3) * 0.05 + Math.sin(t * 17.3) * 0.02;
+    ctx.fillStyle = 'rgba(255,196,120,' + flicker.toFixed(3) + ')';
     rr(ctx, VW / 2 - 32, 22, 64, 6, 3); ctx.fill();
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.shadowColor = 'rgba(255,183,101,0.9)';
+    ctx.shadowBlur = 22;
+    rr(ctx, VW / 2 - 32, 22, 64, 6, 3); ctx.fill();
+    ctx.restore();
+
+    // hanging sign
+    ctx.strokeStyle = 'rgba(120,96,70,0.8)';
+    ctx.lineWidth = 2;
+    for (const sx of [VW / 2 - 122, VW / 2 + 122]) {
+      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, 16); ctx.stroke();
+    }
+    ctx.fillStyle = '#3d2c1e';
+    rr(ctx, VW / 2 - 140, 14, 280, 40, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,183,101,0.45)';
+    ctx.lineWidth = 1.6;
+    rr(ctx, VW / 2 - 140, 14, 280, 40, 7); ctx.stroke();
+    // marquee bulbs inside the top edge of the sign
+    for (let i = 0; i < 7; i++) {
+      const bx = VW / 2 - 120 + i * 40;
+      const on = 0.5 + Math.sin(t * 3 + i * 0.9) * 0.42;
+      ctx.fillStyle = 'rgba(255,214,150,' + on.toFixed(3) + ')';
+      circle(ctx, bx, 22, 2.6);
+      ctx.fill();
+    }
+    ctx.textAlign = 'center';
+    ctx.direction = 'rtl';
+    ctx.font = '800 21px Heebo, sans-serif';
+    ctx.fillStyle = 'rgba(255,205,135,0.96)';
+    ctx.fillText('פלאפל הזבוב', VW / 2, 45);
+  }
+
+  /** Steam off the hot trays. Cheap, and it makes the food read as food. */
+  steam(ctx, game, t) {
+    for (const id of ['balls', 'chips']) {
+      if (game.spoiled[id] || game.trays[id] <= 0) continue;
+      const p = azToPos(STATIONS.find((s) => s.id === id).az);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 3; i++) {
+        const ph = (t * 0.35 + i * 0.33) % 1;
+        const sy = p.y - 20 - ph * 54;
+        const sx = p.x + Math.sin(t * 1.6 + i * 2.1) * 11 * ph;
+        ctx.globalAlpha = (1 - ph) * 0.16;
+        ctx.fillStyle = '#ffd9a8';
+        ctx.beginPath();
+        ctx.ellipse(sx, sy, 9 + ph * 13, 6 + ph * 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
   }
 
   orderBoard(ctx, game) {

@@ -41,8 +41,16 @@ export const SYN_GAIN = 0.11;
 
 const DELAY_STEPS = Math.round(DELAY_MS / DT); // 9
 const RING = 16;                                // power of two > DELAY_STEPS
-const SETTLE_V = 0.002;                         // mV from rest counted as settled
-const SETTLE_G = 0.002;
+/**
+ * How close to rest a neuron has to be before it leaves the active set.
+ *
+ * The threshold gap is 7 mV, so 0.03 mV is 0.4% of the distance a neuron has to
+ * travel to matter - far below anything that changes behaviour, and it retires
+ * quiescent neurons several time constants sooner. That keeps the active set
+ * small when the game gets busy and arousal drives more of the network.
+ */
+const SETTLE_V = 0.03;
+const SETTLE_G = 0.03;
 
 function mulberry32(a) {
   return function () {
