@@ -1,0 +1,2 @@
+# extract_circuit.py uses only the Python standard library.
+# Python 3.9+ required.

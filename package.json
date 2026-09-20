@@ -1,0 +1,23 @@
+{
+  "name": "fly-falafel",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "verify": "python tools/verify_circuit.py",
+    "bench": "node tools/bench.mjs",
+    "calibrate": "node tools/calibrate.mjs",
+    "closedloop": "node tools/closedloop.mjs",
+    "extract": "python tools/extract_circuit.py"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "three": "^0.186.0",
+    "vite": "^8.3.0"
+  }
+}

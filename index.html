@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>זבוב משחק מלך הפלאפל</title>
+<meta name="description" content="סימולציה של מוח זבוב הפירות מתוך הקונקטום האמיתי של FlyWire, שמשחקת משחק דוכן פלאפל." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/src/ui/theme.css" />
+</head>
+<body>
+<div id="boot" class="boot">
+  <div class="boot__inner">
+    <div class="boot__pulse" aria-hidden="true"></div>
+    <p class="boot__title">טוען את המוח</p>
+    <p class="boot__sub" id="boot-status">מוריד את הקונקטום…</p>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="topbar__brand">
+    <span class="topbar__dot" aria-hidden="true"></span>
+    <h1>זבוב משחק מלך הפלאפל</h1>
+    <span class="topbar__sub">FlyWire FAFB v783 · <span id="stat-neurons">—</span> נוירונים</span>
+  </div>
+  <div class="topbar__stats" role="group" aria-label="מצב המשחק">
+    <div class="stat"><span class="stat__label">ניקוד</span><span class="stat__value" id="stat-score">0</span></div>
+    <div class="stat"><span class="stat__label">מנות</span><span class="stat__value" id="stat-served">0</span></div>
+    <div class="stat"><span class="stat__label">ספייקים/שנ׳</span><span class="stat__value" id="stat-spikes">0</span></div>
+    <div class="stat"><span class="stat__label">מהירות מוח</span><span class="stat__value" id="stat-speed">1.0×</span></div>
+  </div>
+  <div class="topbar__actions">
+    <button class="btn" id="btn-pause" type="button" aria-pressed="false">השהה</button>
+    <button class="btn btn--primary" id="btn-restart" type="button">התחל מחדש</button>
+  </div>
+</header>
+
+<main class="stage">
+  <section class="pane pane--game" aria-label="דוכן הפלאפל">
+    <div class="pane__head">
+      <h2>הדוכן</h2>
+      <span class="tag tag--logic">לוגיקת משחק</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="game" width="900" height="620"></canvas>
+      <div class="gameover" id="gameover" hidden>
+        <p class="gameover__title">הלקוחות התפוצצו</p>
+        <p class="gameover__sub" id="gameover-sub"></p>
+        <button class="btn btn--primary" id="btn-again" type="button">עוד פעם</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="pane pane--brain" aria-label="המוח התלת-ממדי">
+    <div class="pane__head">
+      <h2>המוח</h2>
+      <span class="tag tag--neural">קונקטום אמיתי</span>
+    </div>
+    <div class="canvas-wrap canvas-wrap--brain">
+      <canvas id="brain"></canvas>
+      <div class="brain-legend" id="brain-legend"></div>
+      <div class="brain-hint" id="brain-hint">גרור לסובב · גלגלת לזום</div>
+    </div>
+  </section>
+</main>
+
+<section class="telemetry" aria-label="פעילות עצבית">
+  <div class="tel tel--raster">
+    <div class="tel__head"><h3>ספייקים</h3><span class="tel__note" id="raster-note">—</span></div>
+    <canvas id="raster" height="150"></canvas>
+  </div>
+  <div class="tel tel--traces">
+    <div class="tel__head"><h3>נוירונים יורדים</h3><span class="tel__note">Hz</span></div>
+    <canvas id="traces" height="150"></canvas>
+  </div>
+  <div class="tel tel--controls">
+    <div class="tel__head"><h3>ניסויים</h3><span class="tel__note">נגעים ובקרות</span></div>
+    <div class="controls" id="controls"></div>
+  </div>
+</section>
+
+<footer class="credits">
+  <p>
+    נתוני קונקטום: <a href="https://codex.flywire.ai" target="_blank" rel="noopener">FlyWire</a> FAFB v783,
+    רישיון CC BY-NC 4.0 — Dorkenwald et al. 2024, Schlegel et al. 2024.
+    פרמטרי LIF: Shiu et al. 2024.
+  </p>
+  <p>
+    מחווה למשחק <strong>מלך הפלאפל</strong> (2002) מאת דובי גרמייז, נדב גל ורפי ברקוביץ׳.
+    כל האיורים והקוד כאן מקוריים; זהו פרויקט לא-מסחרי ולא קשור ליוצרי המשחק המקורי.
+  </p>
+</footer>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
