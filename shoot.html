@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>צילום · זבוב משחק מלך הפלאפל</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/src/ui/theme.css" />
+<link rel="stylesheet" href="/src/ui/shoot.css" />
+</head>
+<body class="shoot">
+
+<!--
+  A stage built for filming, not for reading.
+
+  1080x1920, one idea per frame, everything inside the safe area that TikTok and
+  Shorts leave free: 9% off the top, 20% off the bottom, and the right-hand
+  button column. Same live components as the real page - nothing here is a
+  mock-up - just laid out portrait and blown up so it survives a phone screen.
+
+  ?scene=<id>  picks the scene.  ?safe=1  draws the safe-area guides.
+-->
+
+<main class="stage9" id="stage">
+  <header class="s-head">
+    <h1 class="s-title" id="s-title"></h1>
+    <p class="s-sub" id="s-sub"></p>
+  </header>
+
+  <div class="s-body" id="s-body"></div>
+
+  <footer class="s-foot">
+    <p class="s-note" id="s-note"></p>
+  </footer>
+</main>
+
+<div class="safe" id="safe" hidden>
+  <div class="safe__top"></div>
+  <div class="safe__bottom"></div>
+  <div class="safe__right"></div>
+</div>
+
+<script type="module" src="/src/shoot.js"></script>
+</body>
+</html>

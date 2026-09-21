@@ -1,0 +1,247 @@
+/**
+ * Deterministic clip capture for the video.
+ *
+ * Screen recorders produce variable frame rates, which stutter in editors. This
+ * does not record the screen at all: it drives the app's own tick(dtMs) one
+ * frame at a time, grabs a screenshot after each, and hands ffmpeg an exact
+ * 30 fps sequence. Every clip is reproducible frame for frame.
+ *
+ * Runs its own headless Chrome on a throwaway profile - never the user's.
+ *
+ *   node tools/capture.mjs            # all clips
+ *   node tools/capture.mjs 03 07      # just these
+ */
+import { spawn } from 'node:child_process';
+import { mkdirSync, writeFileSync, rmSync, readdirSync, copyFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+const FFMPEG = 'C:/Users/eliha/AppData/Local/Microsoft/WinGet/Packages/'
+  + 'Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe/'
+  + 'ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe';
+const OUT = 'C:/Users/eliha/Videos/fly brain video/clips';
+const SCREENS = 'C:/Users/eliha/Videos/fly brain video/screens';
+const URL = process.env.CAP_URL || 'http://localhost:4173/';
+const PORT = 9333;
+const W = 1080, H = 1920;   // portrait, for phone
+const FPS = 30;
+/**
+ * How much world-time each captured frame advances.
+ *
+ * Not 1000/30. The fly at real speed serves a dish every couple of seconds and
+ * reads as frantic; feeding it a third of a frame's worth of time per frame
+ * gives genuine slow motion at a full 30 fps, with every frame freshly
+ * computed rather than duplicated.
+ */
+const TIME_SCALE = 0.34;
+const DT = (1000 / FPS) * TIME_SCALE;
+
+/* ------------------------------------------------------------------ CDP --- */
+
+let msgId = 0;
+const pending = new Map();
+let ws;
+
+function send(method, params = {}, sessionId) {
+  const id = ++msgId;
+  const payload = { id, method, params };
+  if (sessionId) payload.sessionId = sessionId;
+  ws.send(JSON.stringify(payload));
+  return new Promise((res, rej) => pending.set(id, { res, rej }));
+}
+
+async function connect(wsUrl) {
+  ws = new WebSocket(wsUrl);
+  await new Promise((res, rej) => {
+    ws.addEventListener('open', res, { once: true });
+    ws.addEventListener('error', rej, { once: true });
+  });
+  ws.addEventListener('message', (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.id && pending.has(m.id)) {
+      const { res, rej } = pending.get(m.id);
+      pending.delete(m.id);
+      if (m.error) rej(new Error(m.method + ': ' + m.error.message));
+      else res(m.result);
+    }
+  });
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function evaluate(expr, session, awaitPromise = true) {
+  const r = await send('Runtime.evaluate', {
+    expression: expr, awaitPromise, returnByValue: true,
+  }, session);
+  if (r.exceptionDetails) {
+    throw new Error('page error: ' + (r.exceptionDetails.exception?.description
+      || r.exceptionDetails.text));
+  }
+  return r.result?.value;
+}
+
+/* ---------------------------------------------------------------- clips --- */
+
+/**
+ * Each clip: how to set the page up, then how many frames to roll.
+ * `setup` runs once and may scroll, move the camera, or seed game state.
+ * `perFrame` runs before each capture, for anything that needs to change.
+ */
+const CLIPS = [
+  { id: '01', scene: 'brain',     seconds: 9,
+    caption: 'זה מוח אמיתי של זבוב פירות. כל נוירון שרואים פה נמצא במקום שהוא באמת יושב בו בראש.' },
+  { id: '02', scene: 'slicing',   seconds: 14, timeScale: 1,
+    caption: 'חוקרים פרסו מוח של זבוב לאלפי פרוסות דקות משערה, וצילמו כל אחת במיקרוסקופ אלקטרונים.' },
+  { id: '03', scene: 'circuit',   seconds: 8,
+    caption: 'לקחתי ממנו את המעגל שאחראי לראות משהו ולזוז אליו.' },
+  { id: '04', scene: 'eye',       seconds: 10,
+    caption: 'העין שלו היא לא מצלמה: שבע מאות וחמישים עדשות זעירות, כל אחת לכיוון אחר.' },
+  { id: '05', scene: 'stand',     seconds: 10,
+    caption: 'אני לא מתכנת אותו. אני שם מולו משהו שהאינסטינקט שלו כבר יודע להגיב אליו.' },
+  { id: '06', scene: 'pathway',   seconds: 11,
+    caption: 'גלאי שמזהה משהו קטן שזז, ושני ממסרים: אחד נדלק כשזה באמצע, השני כשזה בצד.' },
+  { id: '07', scene: 'vision',    seconds: 9,
+    caption: 'הגבעה היא המקום שבו המוח שלו חושב שהמטרה נמצאת.' },
+  { id: '08', scene: 'courtship', seconds: 7, timeScale: 1,
+    caption: 'בטבע זה המנגנון שזכר מפעיל כשהוא נועל על נקבה ורודף אחריה.' },
+  { id: '09', scene: 'escape',    seconds: 7, timeScale: 1,
+    caption: 'ומעגל הבריחה, שנבנה כדי לברוח ממכת זבובים, הוא זה שסוטר לזבוב.' },
+  { id: '10', scene: 'lock',      seconds: 10,
+    caption: 'בשביל המוח שלו זה עוד משהו קטן שזז. ולכן הוא מסתובב אליו, עד שהוא באמצע.' },
+  { id: '11', scene: 'scramble',  seconds: 12,
+    caption: 'ערבבתי לו את החיווט. אותם נוירונים, אותו מספר חיבורים, רק מחוברים לא נכון.' },
+];
+
+/** Hand the page over to us: stop its own loop, we drive every frame. */
+const TAKE_OVER = `window.S.driven = true; true;`;
+
+/* ----------------------------------------------------------------- main --- */
+
+async function main() {
+  const only = process.argv.slice(2);
+  const clips = only.length ? CLIPS.filter((c) => only.includes(c.id)) : CLIPS;
+  if (!clips.length) { console.error('no clips matched'); process.exit(1); }
+
+  mkdirSync(OUT, { recursive: true });
+  mkdirSync(SCREENS, { recursive: true });
+  const profile = join(tmpdir(), 'fly-capture-profile-' + Date.now());
+  mkdirSync(profile, { recursive: true });
+
+  console.log('launching headless chrome on a throwaway profile');
+  const chrome = spawn(CHROME, [
+    '--headless=new',
+    '--remote-debugging-port=' + PORT,
+    '--user-data-dir=' + profile,
+    '--window-size=' + W + ',' + H,
+    '--hide-scrollbars',
+    '--force-device-scale-factor=1',
+    '--disable-extensions',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--use-gl=angle',
+    '--use-angle=d3d11',
+    '--enable-unsafe-swiftshader',
+    'about:blank',
+  ], { stdio: 'ignore' });
+
+  // wait for the debugging endpoint
+  let target = null;
+  for (let i = 0; i < 60 && !target; i++) {
+    await sleep(500);
+    try {
+      const r = await fetch('http://127.0.0.1:' + PORT + '/json/version');
+      if (r.ok) target = await r.json();
+    } catch { /* not up yet */ }
+  }
+  if (!target) { chrome.kill(); throw new Error('chrome did not expose CDP'); }
+  await connect(target.webSocketDebuggerUrl);
+  console.log('connected:', target.Browser);
+
+  const { targetId } = await send('Target.createTarget', { url: 'about:blank' });
+  const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
+  await send('Page.enable', {}, sessionId);
+  await send('Runtime.enable', {}, sessionId);
+  await send('Emulation.setDeviceMetricsOverride',
+    { width: W, height: H, deviceScaleFactor: 1, mobile: false }, sessionId);
+
+  for (const clip of clips) {
+    process.stdout.write('  ' + clip.id + ' ' + clip.scene.padEnd(12));
+    const frameDir = join(tmpdir(), 'fly-frames-' + clip.id);
+    rmSync(frameDir, { recursive: true, force: true });
+    mkdirSync(frameDir, { recursive: true });
+
+    await send('Page.navigate',
+      { url: URL + 'shoot.html?scene=' + clip.scene }, sessionId);
+
+    let ready = false;
+    for (let i = 0; i < 90 && !ready; i++) {
+      await sleep(250);
+      ready = await evaluate('!!(window.S && window.S.ready)', sessionId).catch(() => false);
+    }
+    if (!ready) throw new Error(clip.id + ': scene never booted');
+    await evaluate(TAKE_OVER, sessionId);
+
+    // a still frame is a still frame; scenes that animate get eased in
+    const dt = (1000 / FPS) * (clip.timeScale ?? TIME_SCALE);
+    await evaluate(`for (let i = 0; i < ${clip.warm ?? 120}; i++) window.S.tick(${dt}); true;`,
+      sessionId);
+
+    const total = Math.round(clip.seconds * FPS);
+    for (let frame = 0; frame < total; frame++) {
+      await evaluate(`window.S.tick(${dt}); true;`, sessionId);
+      const shot = await send('Page.captureScreenshot',
+        { format: 'png', captureBeyondViewport: false }, sessionId);
+      writeFileSync(join(frameDir, String(frame).padStart(5, '0') + '.png'),
+        Buffer.from(shot.data, 'base64'));
+    }
+
+    const still = readdirSync(frameDir).sort().at(Math.floor(total / 2));
+    copyFileSync(join(frameDir, still), join(SCREENS, clip.id + '_' + clip.scene + '.png'));
+
+    await encode(frameDir, join(OUT, clip.id + '_' + clip.scene + '.mp4'));
+    writeSrt(join(OUT, clip.id + '_' + clip.scene + '.srt'), clip);
+    rmSync(frameDir, { recursive: true, force: true });
+    console.log('  ' + total + ' frames  ' + clip.seconds + 's');
+  }
+
+  await send('Target.closeTarget', { targetId });
+  ws.close();
+  chrome.kill();
+  // chrome holds a lock on the profile for a moment after kill; it is a temp
+  // dir either way, so never fail the run over it
+  await sleep(600);
+  try { rmSync(profile, { recursive: true, force: true }); } catch { /* fine */ }
+  console.log('\ndone ->', OUT);
+}
+
+function encode(dir, out) {
+  return new Promise((res, rej) => {
+    const p = spawn(FFMPEG, [
+      '-y', '-hide_banner', '-loglevel', 'error',
+      '-framerate', String(FPS),
+      '-i', join(dir, '%05d.png'),
+      '-c:v', 'libx264', '-preset', 'slow', '-crf', '17',
+      '-pix_fmt', 'yuv420p',
+      '-r', String(FPS), '-fps_mode', 'cfr',
+      out,
+    ], { stdio: ['ignore', 'ignore', 'inherit'] });
+    p.on('exit', (c) => (c === 0 ? res() : rej(new Error('ffmpeg exit ' + c))));
+  });
+}
+
+function stamp(sec) {
+  const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+  const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+  const s = String(Math.floor(sec % 60)).padStart(2, '0');
+  const ms = String(Math.round((sec % 1) * 1000)).padStart(3, '0');
+  return h + ':' + m + ':' + s + ',' + ms;
+}
+
+function writeSrt(path, clip) {
+  writeFileSync(path,
+    '1\n' + stamp(0) + ' --> ' + stamp(clip.seconds) + '\n' + clip.caption + '\n',
+    'utf8');
+}
+
+main().catch((e) => { console.error('\nFAILED:', e.message); process.exit(1); });

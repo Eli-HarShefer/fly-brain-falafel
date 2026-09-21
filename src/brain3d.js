@@ -91,8 +91,8 @@ void main() {
   float r = dot(d, d);
   if (r > 0.25) discard;
   float soft = smoothstep(0.25, 0.0, r);
-  float bright = 0.30 + vFlash * 2.6;
-  gl_FragColor = vec4(vColor * bright, soft * (0.55 + vFlash * 0.45));
+  float bright = 0.26 + vFlash * 1.45;
+  gl_FragColor = vec4(vColor * bright, soft * (0.48 + vFlash * 0.42));
 }`;
 
 export class BrainView {
@@ -147,7 +147,7 @@ export class BrainView {
     // Kept modest: with the translucent head shell stacking on top of the point
     // cloud, a stronger bloom turns the whole brain into one white blob and the
     // structure stops reading.
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.52, 0.68, 0.62);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.34, 0.72, 0.72);
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(rp);
     this.composer.addPass(this.bloom);
@@ -188,6 +188,12 @@ export class BrainView {
       blending: THREE.NormalBlending,
     });
     this.cloud = new THREE.Points(g, m);
+    this.cloudColor = col;
+    this.cloudColorAttr = g.getAttribute('color');
+    this.cloudBase = col.slice();
+    this.cloudZ = new Float32Array(cloud.n);
+    for (let i = 0; i < cloud.n; i++) this.cloudZ[i] = p[i * 3 + 2];
+    this.cloudN = cloud.n;
     this.scene.add(this.cloud);
   }
 
@@ -354,6 +360,59 @@ export class BrainView {
       outDeg: this.outDeg[i],
       inDeg: this.inDeg[i],
     };
+  }
+
+  /**
+   * Sweep an imaging plane through the cloud along the anterior-posterior axis.
+   *
+   * This is how the connectome was actually made: the brain was cut into
+   * thousands of sections and each one photographed. Rather than borrow footage
+   * of that, this lights up the real neurons that sit in the section currently
+   * under the plane, using their real coordinates. Everything behind the plane
+   * stays dim, so you watch the volume get built up slice by slice.
+   *
+   * @param z plane position in normalised coords, or null to clear
+   * @param thickness how much of the volume counts as "the current section"
+   */
+  setScan(z, thickness = 0.035) {
+    const c = this.cloudColor, base = this.cloudBase, zs = this.cloudZ;
+    if (z === null) {
+      c.set(base);
+    } else {
+      for (let i = 0; i < this.cloudN; i++) {
+        const d = Math.abs(zs[i] - z);
+        const o = i * 3;
+        if (d < thickness) {
+          // in the section being imaged right now
+          const k = 1 - d / thickness;
+          c[o] = base[o] + k * 1.7;
+          c[o + 1] = base[o + 1] + k * 1.9;
+          c[o + 2] = base[o + 2] + k * 2.0;
+        } else if (zs[i] < z) {
+          // already scanned: keep it, dimmer
+          c[o] = base[o] * 0.85;
+          c[o + 1] = base[o + 1] * 0.85;
+          c[o + 2] = base[o + 2] * 0.9;
+        } else {
+          // not reached yet
+          c[o] = base[o] * 0.12;
+          c[o + 1] = base[o + 1] * 0.12;
+          c[o + 2] = base[o + 2] * 0.14;
+        }
+      }
+    }
+    this.cloudColorAttr.needsUpdate = true;
+  }
+
+  /** Bounds of the cloud along the scan axis, for driving setScan. */
+  scanRange() {
+    let lo = 9, hi = -9;
+    for (let i = 0; i < this.cloudN; i++) {
+      const v = this.cloudZ[i];
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    return { lo, hi };
   }
 
   setEdgesVisible(v) { if (this.edges) this.edges.visible = v; }

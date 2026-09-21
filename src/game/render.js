@@ -90,17 +90,17 @@ export class StandRenderer {
     ctx.scale(scale, scale);
 
     this.bg(ctx, t);
-    this.customers(ctx, game, t);
-    this.orderBoard(ctx, game);
+    if (!this.clean) this.customers(ctx, game, t);
+    if (!this.clean) this.orderBoard(ctx, game);
     this.counter(ctx);
     this.gaze(ctx, game, handAz, neural, t);
     this.stations(ctx, game, handAz, t);
     this.steam(ctx, game, t);
-    this.plate(ctx, game, t);
+    if (!this.clean) this.plate(ctx, game, t);
     this.pests(ctx, game, t);
     this.fly(ctx, game, handAz, neural, t);
-    this.effects(ctx, game, t);
-    if (game.tapeFlash > 0) this.tape(ctx, game, t);
+    if (!this.clean) this.effects(ctx, game, t);
+    if (!this.clean && game.tapeFlash > 0) this.tape(ctx, game, t);
   }
 
   bg(ctx, t) {

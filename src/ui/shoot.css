@@ -1,0 +1,98 @@
+/*
+  Filming stage. 1080x1920, one idea per frame.
+
+  Safe areas the platforms cover, and which nothing important may enter:
+    top     9%  = 173px   (TikTok/Shorts header)
+    bottom 20%  = 384px   (caption, handle)
+    right  14%  = 151px, between 38% and 86% height (the button rail)
+
+  So: all text lives between y 173 and y 1536, and inside x 60..900. The visual
+  may reach wider, as long as its subject stays centred.
+*/
+
+.shoot {
+  margin: 0;
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  background: oklch(0.055 0 0);
+  display: block;
+}
+
+.stage9 {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 190px 48px 400px;
+  gap: 34px;
+  box-sizing: border-box;
+}
+
+/* ---------- title ---------- */
+.s-head { display: grid; gap: 14px; max-width: 840px; }
+.s-title {
+  margin: 0;
+  font-size: 68px;
+  line-height: 1.1;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.s-title em {
+  font-style: normal;
+  color: var(--warn);
+}
+.s-sub {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--ink-muted);
+  text-wrap: balance;
+}
+
+/* ---------- the one visual ---------- */
+.s-body {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+.s-body canvas {
+  display: block;
+  border-radius: 20px;
+  background: oklch(0.04 0 0);
+}
+.s-body .frame {
+  position: relative;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: oklch(0.04 0 0);
+}
+.s-body .frame canvas { border-radius: 0; width: 100%; height: 100%; }
+
+/* ---------- caption ---------- */
+.s-foot { max-width: 840px; }
+.s-note {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.s-note b { color: var(--warn); font-weight: 800; }
+.s-note:empty { display: none; }
+
+/* ---------- safe-area guides (?safe=1) ---------- */
+.safe[hidden] { display: none; }
+.safe {
+  position: fixed; inset: 0; pointer-events: none; z-index: 99;
+}
+.safe div { position: absolute; background: rgba(224,85,63,0.16); }
+.safe__top { top: 0; left: 0; right: 0; height: 173px; }
+.safe__bottom { bottom: 0; left: 0; right: 0; height: 384px; }
+.safe__right { right: 0; top: 730px; width: 151px; height: 921px; }

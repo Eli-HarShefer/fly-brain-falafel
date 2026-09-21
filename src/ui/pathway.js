@@ -130,7 +130,7 @@ export class PathwayView {
     this.drawEdges(ctx, d);
     this.drawPulses(ctx, d, dt);
     for (const n of this.nodes.values()) this.drawNode(ctx, n, d);
-    this.drawOutput(ctx, out, d);
+    if (!this.clean) this.drawOutput(ctx, out, d);
     this.drawColumnLabels(ctx, d);
   }
 
@@ -223,9 +223,11 @@ export class PathwayView {
     ctx.fillStyle = 'rgba(247,242,234,' + (0.6 + n.lit * 0.4).toFixed(3) + ')';
     ctx.font = '600 ' + (9.5 * d).toFixed(0) + 'px JetBrains Mono, monospace';
     ctx.fillText(n.label, n.x, n.y - 1 * d);
-    ctx.fillStyle = 'rgba(' + n.tint.join(',') + ',0.95)';
-    ctx.font = (8.5 * d).toFixed(0) + 'px JetBrains Mono, monospace';
-    ctx.fillText(n.rate.toFixed(0) + ' Hz', n.x, n.y + 9 * d);
+    if (!this.clean) {
+      ctx.fillStyle = 'rgba(' + n.tint.join(',') + ',0.95)';
+      ctx.font = (8.5 * d).toFixed(0) + 'px JetBrains Mono, monospace';
+      ctx.fillText(n.rate.toFixed(0) + ' Hz', n.x, n.y + 9 * d);
+    }
   }
 
   /** Steering gauge, grab lamp and swat lamp. */

@@ -51,7 +51,7 @@ const FLY = (ctx, x, y, s, opts = {}) => {
   ctx.restore();
 };
 
-const SCENES = {
+export const SCENES = {
   /** Courtship: a male locks onto a female and will not let go. */
   courtship(ctx, w, h) {
     const mid = w / 2;
