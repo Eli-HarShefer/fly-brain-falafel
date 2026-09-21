@@ -139,3 +139,126 @@ function wrapLines(ctx, s, maxW) {
   if (cur) out.push(cur);
   return out;
 }
+
+/* ------------------------------------------------------ the research itself --- */
+
+/**
+ * What it actually took, in numbers that are all checkable.
+ *
+ *   21 million    raw ssTEM camera images of one brain, and 40 teravoxels of
+ *                 tissue, from the flood-filling-network reconstruction paper
+ *   Google        flood-filling networks: convolutional nets that trace each
+ *                 fibre outward from a seed point, slice after slice
+ *   287 / 76      researchers and labs in the FlyWire Consortium, plus public
+ *                 volunteers, over 33 person-years of manual proofreading
+ *   139,255       neurons and ~54.5 million synapses in the finished map
+ */
+const EFFORT = [
+  ['21 מיליון תמונות', 'מוח אחד של זבוב, מצולם פרוסה אחרי פרוסה במיקרוסקופ אלקטרונים.'],
+  ['רשת נוירונים של גוגל', 'צבעה כל סיב בנפרד לאורך אלפי הפרוסות. בלי זה אי אפשר היה לגמור את זה בכלל.'],
+  ['33 שנות אדם', '287 חוקרים מ-76 מעבדות, ומתנדבים מכל העולם, תיקנו ביד את מה שהמחשב פספס.'],
+];
+
+export function drawEffort(ctx, w, h) {
+  const gap = 22, lh = 40, px = 32;
+  ctx.font = '600 ' + px + 'px Heebo, sans-serif';
+  const cards = EFFORT.map(([head, body]) => {
+    const lines = wrapLines(ctx, body, w - 76);
+    return { head, lines, h: 92 + lines.length * lh + 30 };
+  });
+  const total = cards.reduce((a, c) => a + c.h, 0) + gap * (cards.length - 1);
+  let y = Math.max(0, (h - total) / 2);
+
+  cards.forEach((c) => {
+    ctx.beginPath();
+    ctx.roundRect(0, y, w, c.h, 22);
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    text(ctx, w - 32, y + 62, c.head, 42, WARN, 800);
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'right';
+    ctx.font = '600 ' + px + 'px Heebo, sans-serif';
+    ctx.fillStyle = MUTED;
+    c.lines.forEach((ln, k) => ctx.fillText(ln, w - 32, y + 112 + k * lh));
+    y += c.h + gap;
+  });
+}
+
+/* -------------------------------------------------------------- quotations --- */
+
+/**
+ * A researcher's own words.
+ *
+ * Both lines are kept: the Hebrew because the video is in Hebrew, and the
+ * English underneath because that is what the person actually said and a
+ * translated quote with no original is not a quote. Source and speaker are on
+ * screen, not in a description.
+ */
+export function drawQuote(ctx, w, h, q) {
+  const he = wrapFont(ctx, q.he, w - 60, '800 52px Heebo, sans-serif');
+  const en = wrapFont(ctx, q.en, w - 90, 'italic 500 30px Heebo, sans-serif');
+  const block = he.length * 70 + 26 + en.length * 42 + 108;
+  let y = Math.max(70, (h - block) / 2);
+
+  // an opening mark, sized like a pull quote in print
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'right';
+  ctx.font = '900 130px Heebo, sans-serif';
+  ctx.fillStyle = 'rgba(245,204,114,0.22)';
+  ctx.fillText('”', w - 10, y + 24);
+
+  y += 58;
+  ctx.font = '800 52px Heebo, sans-serif';
+  ctx.fillStyle = INK;
+  for (const line of he) { ctx.fillText(line, w - 30, y); y += 70; }
+
+  y += 26;
+  ctx.direction = 'ltr';
+  ctx.textAlign = 'right';
+  ctx.font = 'italic 500 30px Heebo, sans-serif';
+  ctx.fillStyle = 'rgba(179,165,149,0.72)';
+  for (const line of en) { ctx.fillText(line, w - 30, y); y += 42; }
+
+  y += 46;
+  ctx.beginPath();
+  ctx.moveTo(w - 30, y - 22); ctx.lineTo(w - 120, y - 22);
+  ctx.strokeStyle = 'rgba(245,204,114,0.5)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.direction = 'rtl';
+  ctx.font = '800 36px Heebo, sans-serif';
+  ctx.fillStyle = WARN;
+  ctx.fillText(q.who, w - 30, y + 22);
+  ctx.font = '600 28px Heebo, sans-serif';
+  ctx.fillStyle = MUTED;
+  ctx.fillText(q.role, w - 30, y + 64);
+}
+
+/** Wrap against a font the caller names, without disturbing the caller's state. */
+function wrapFont(ctx, s, maxW, font) {
+  ctx.save();
+  ctx.font = font;
+  const out = wrapLines(ctx, s, maxW);
+  ctx.restore();
+  return out;
+}
+
+export const QUOTES = {
+  murthy: {
+    he: 'אין שום קונקטום מלא אחר של מוח, לשום חיה בוגרת במורכבות הזאת.',
+    en: '"There is no other full brain connectome for an adult animal of this complexity."',
+    who: 'מאלה מרת׳י',
+    role: 'מנהלת מכון מדעי המוח של פרינסטון · הודעה לעיתונות, 2024',
+  },
+  seung: {
+    he: 'כל מוח שאנחנו באמת מבינים מלמד אותנו משהו על כל המוחות.',
+    en: '"Any brain that we truly understand tells us something about all brains."',
+    who: 'סבסטיאן סונג',
+    role: 'פרופסור למדעי המוח, פרינסטון · הודעה לעיתונות, 2024',
+  },
+};

@@ -27,8 +27,9 @@ import { BrainView, parseCloud } from './brain3d.js';
 import { PathwayView } from './ui/pathway.js';
 import { VisionView } from './ui/vision.js';
 import { EyeView } from './ui/eye.js';
-import { STACKED as ORIGIN_STACKED } from './ui/origins.js';
-import { drawScale, drawFuture } from './ui/scale.js';
+import { STACKED as ORIGIN_STACKED, PANELS } from './ui/origins.js';
+import { drawScale, drawFuture, drawEffort, drawQuote, QUOTES } from './ui/scale.js';
+import { PhotoView, loadImage } from './ui/photo.js';
 import { FOOD } from './game/art.js';
 
 /** Where the connectome files sit, relative to wherever the page is mounted. */
@@ -97,6 +98,109 @@ const SCENES = {
         (v.x * Math.sin(a) + v.z * Math.cos(a)) * dolly,
       ).add(c.view.center);
     },
+  },
+
+  slice: {
+    title: 'זאת פרוסה אחת',
+    sub: 'תמונה אמיתית מהמחקר: רקמת מוח של זבוב מתחת ל<em>מיקרוסקופ אלקטרונים</em>',
+    note: 'כל עיגול קטן פה הוא חתך של סיב עצבי אחד. צריך לזהות כל אחד מהם, '
+        + 'ואז לעקוב אחריו <em>בכל הפרוסות</em> עד הסוף.',
+    frames: [{ kind: 'photo', src: 'research/research_em.png', zoom: 'in',
+      fit: 'cover', seconds: 10, credit: 'Dorkenwald et al., Nature 2024 (CC BY 4.0)' }],
+  },
+
+  effort: {
+    title: 'וזה גודל המחקר',
+    sub: 'זה נמשך מ-2008, וזה לא נגמר בלי <em>גוגל</em>',
+    note: 'המיפוי האוטומטי הוא של <em>גוגל ריסרץ׳</em> ביחד עם מכון ג׳נליה. '
+        + 'הבדיקה הידנית היא של מאות חוקרים ומתנדבים מכל העולם.',
+    frames: [{ kind: 'still', paint: drawEffort }],
+  },
+
+  allneurons: {
+    title: 'וזאת התוצאה',
+    sub: 'כל נוירון במוח של זבוב, משורטט אחד-אחד. <em>139,255</em> נוירונים.',
+    note: 'המוח השלם הראשון שמופה אי פעם, בכל חיה שהיא. אחרי זה גוגל וג׳נליה '
+        + 'סיימו גם <em>מוח של זכר</em>, 166 אלף נוירונים ו-125 מיליון חיבורים.',
+    frames: [{ kind: 'photo', src: 'research/research_brain.png', zoom: 'out',
+      seconds: 10, credit: 'Dorkenwald et al., Nature 2024 (CC BY 4.0)' }],
+  },
+
+  reel_brain: {
+    title: 'וזה מהמחקר עצמו',
+    sub: 'כל <em>139 אלף</em> הנוירונים, מסתובבים',
+    note: 'זה הווידאו שצורף למאמר ב-Nature. כל חוט פה הוא נוירון אחד '
+        + 'שמחשב זיהה ובן אדם אימת <em>ביד</em>.',
+    credit: 'Supplementary Video 1 · Dorkenwald et al., Nature 2024 · CC BY 4.0',
+    frames: [{ kind: 'slot' }],
+  },
+
+  reel_visual: {
+    title: 'מפה לקחתי את הראייה',
+    sub: 'הצהובים הם <em>נוירוני ההקרנה החזותית</em>, והמעגל שלי מתחיל בדיוק בהם',
+    note: 'LC10a, הגלאי שמזהה משהו קטן שזז ונועל עליו, הוא אחד מהצהובים האלה.',
+    credit: 'Supplementary Video 1 · Dorkenwald et al., Nature 2024 · CC BY 4.0',
+    frames: [{ kind: 'slot' }],
+  },
+
+  reel_descending: {
+    title: 'ופה הפקודות יוצאות',
+    sub: 'הנוירונים היורדים, <em>מהמוח אל הגוף</em>',
+    note: 'גרג ג׳פריס מקיימברידג׳ אמר על זה שזה <em>מביא אותנו מהעיניים לרגליים '
+        + 'במכה אחת</em>. זה בדיוק מה שהמעגל שלי עושה.',
+    credit: 'Supplementary Video 1 · Dorkenwald et al., Nature 2024 · CC BY 4.0',
+    frames: [{ kind: 'slot' }],
+  },
+
+  quote_murthy: {
+    title: '',
+    sub: '',
+    note: '',
+    frames: [{ kind: 'still', paint: (c, w, h) => drawQuote(c, w, h, QUOTES.murthy) }],
+  },
+
+  quote_seung: {
+    title: '',
+    sub: '',
+    note: '',
+    frames: [{ kind: 'still', paint: (c, w, h) => drawQuote(c, w, h, QUOTES.seung) }],
+  },
+
+  quad: {
+    title: 'מוח אמיתי של זבוב',
+    sub: 'שלושה חלונות מהמחקר עצמו, ואחד מהמודל ש<em>אני</em> הרצתי עליו',
+    note: 'מאה שלושים ותשעה אלף נוירונים, כל אחד במקום שהוא באמת יושב בו.',
+    credit: 'Supplementary Video 1 · Dorkenwald et al., Nature 2024 · CC BY 4.0',
+    layout: 'quad',
+    frames: [
+      { kind: 'slot', tag: 'המחקר' },
+      { kind: 'slot', tag: 'הראייה' },
+      { kind: 'slot', tag: 'הפקודות' },
+      { kind: 'brain', tag: 'המודל שלי', tagClass: 'frame__tag--them' },
+    ],
+    setup: (c) => {
+      c.view.setCloudVisible(true);
+      c.view.setEdgesVisible(true);
+      c.view.controls.autoRotate = true;
+      c.view.controls.autoRotateSpeed = 2.1;
+      // closer than the full-frame scenes: this panel is a quarter of the width
+      c.view.camera.position.set(0.02, 0.18, 1.46).add(c.view.center);
+      c.view.controls.update();
+    },
+  },
+
+  instincts: {
+    title: 'שני המעגלים האלה לא נבנו לפלאפל',
+    sub: 'שניהם קיימים בזבוב מזמן, ושניהם עושים פה <em>בדיוק אותו דבר</em>',
+    note: 'למעלה: גלאי שנועל על משהו קטן שזז, ובטבע זה נקבה. '
+        + 'למטה: רפלקס שבורח ממכה, ואצלנו הוא <em>סוטר</em>.',
+    layout: 'quad',
+    frames: [
+      { kind: 'still', paint: PANELS.courtshipNature },
+      { kind: 'still', paint: PANELS.courtshipOurs },
+      { kind: 'still', paint: PANELS.escapeNature },
+      { kind: 'still', paint: PANELS.escapeOurs },
+    ],
   },
 
   circuit: {
@@ -218,12 +322,18 @@ async function main() {
   $('s-title').innerHTML = scene.title;
   $('s-sub').innerHTML = scene.sub || '';
   $('s-note').innerHTML = scene.note || '';
+  if (scene.credit) $('s-credit').textContent = scene.credit;
 
   const [circuitBuf, meta, cloudBuf] = await Promise.all([
     fetch(DATA + 'circuit.bin').then((r) => r.arrayBuffer()),
     fetch(DATA + 'circuit.json').then((r) => r.json()),
     fetch(DATA + 'cloud.bin').then((r) => r.arrayBuffer()),
   ]);
+  const photos = new Map();
+  for (const f of scene.frames) {
+    if (f.kind === 'photo') photos.set(f.src, await loadImage(DATA.replace('data/', '') + f.src));
+  }
+
   const circuit = parseCircuit(circuitBuf);
   const brain = new FlyBrain(circuit);
   const controller = new FlyController(meta, brain);
@@ -263,6 +373,15 @@ async function main() {
       v.resize();
       return (dt) => v.draw(brain, game, ctx.handAz, controller.lastOut, dt);
     }
+    if (kind === 'slot') {
+      // deliberately draws nothing: tools/research.mjs overlays the licensed
+      // research footage into this rectangle after the page is screenshotted
+      return () => {};
+    }
+    if (kind === 'photo') {
+      const v = new PhotoView(canvas, photos.get(opt.src), opt);
+      return (dt, t) => v.draw(t);
+    }
     if (kind === 'still') {
       const dpr = 2;
       const r = canvas.getBoundingClientRect();
@@ -289,11 +408,15 @@ async function main() {
 
   // main frames
   const body = $('s-body');
+  if (scene.layout === 'quad') body.classList.add('s-body--quad');
+  let slotNo = 0;
   for (const f of scene.frames) {
     const div = document.createElement('div');
     div.className = 'frame';
     const canvas = document.createElement('canvas');
     div.appendChild(canvas);
+    // the compositor finds its holes by this index, in document order
+    if (f.kind === 'slot') div.dataset.slot = String(slotNo++);
     if (f.tag) {
       const tag = document.createElement('span');
       tag.className = 'frame__tag' + (f.tagClass ? ' ' + f.tagClass : '');
@@ -326,7 +449,25 @@ async function main() {
     document.querySelector('.s-foot').appendChild(strip);
   }
 
-  // the canvases need their final laid-out size before the views are built
+  // The canvases need their final laid-out size before the views are built,
+  // and the webfont has to be in before anything paints text into a canvas.
+  //
+  // document.fonts.ready alone is not enough: a browser only fetches a face
+  // that something in the DOM actually uses, and canvas text does not count.
+  // On a scene whose title and caption are empty - a pull quote, say - nothing
+  // in the DOM asks for Heebo, so the file is never fetched and every canvas
+  // heading silently comes out in a fallback serif.
+  //
+  // The sample text matters as much as the weight. Google Fonts splits Heebo
+  // into unicode-range subsets, and fonts.load() with no text tests a Latin
+  // string, so it fetches the Latin face and leaves the Hebrew one alone -
+  // which is the whole alphabet this video is written in.
+  await Promise.all([
+    ...['500', '600', '700', '800', '900'].map(
+      (w) => document.fonts.load(w + ' 40px Heebo', 'אבג')),
+    document.fonts.load('600 20px "JetBrains Mono"', '0123'),
+  ]);
+  await document.fonts.ready;
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   for (const d of draws) d.draw = build(d.kind, d.canvas, d.opt);
 

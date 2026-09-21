@@ -90,44 +90,60 @@ async function evaluate(expr, session, awaitPromise = true) {
  * `perFrame` runs before each capture, for anything that needs to change.
  */
 const CLIPS = [
-  { id: '01', scene: 'brain',     seconds: 9,
-    caption: 'זה מוח אמיתי של זבוב פירות. כל נוירון שרואים פה נמצא במקום שהוא באמת יושב בו בראש.' },
-  { id: '02', scene: 'slicing',   seconds: 12, timeScale: 1,
-    caption: 'חתכו את המוח לאלפי פרוסות, וצילמו כל אחת במיקרוסקופ אלקטרונים.' },
-  { id: '03', scene: 'circuit',   seconds: 8,
-    caption: 'לקחתי ממנו את המעגל שאחראי לראות משהו ולזוז אליו.' },
-  { id: '04', scene: 'stand',     seconds: 10,
-    caption: 'נתתי לו דוכן פלאפל. אף אחד לא לימד אותו לשחק.' },
-  { id: '05', scene: 'eye',       seconds: 10,
-    caption: 'אבל ככה הוא רואה: העין שלו היא לא מצלמה, אלא שבע מאות וחמישים עדשות קטנות.' },
-  { id: '06', scene: 'both',      seconds: 11,
+  // 01 is the live panel of the four-up opener; tools/research.mjs then fills
+  // the other three holes with the licensed research footage
+  { id: '01', scene: 'quad',         seconds: 12, timeScale: 1,
+    caption: 'זה מוח אמיתי של זבוב. שלושה חלונות מהמחקר עצמו, ואחד מהמודל שאני הרצתי.' },
+  { id: '02', scene: 'slicing',      seconds: 12, timeScale: 1,
+    caption: 'וככה מיפו אותו. חתכו מוח לאלפי פרוסות וצילמו כל אחת במיקרוסקופ אלקטרונים.' },
+  { id: '03', scene: 'slice',        seconds: 10, timeScale: 1, warm: 0,
+    caption: 'זאת תמונה אמיתית מהמחקר. כל עיגול קטן פה הוא חתך של סיב עצבי אחד.' },
+  { id: '04', scene: 'effort',       seconds: 13, timeScale: 1,
+    caption: 'מוח אחד יצא 21 מיליון תמונות. גוגל בנתה רשת נוירונים שעקבה אחרי כל סיב לבד.' },
+  { id: '05', scene: 'quote_murthy', seconds: 7, timeScale: 1,
+    caption: 'מאלה מרתי מפרינסטון: אין שום קונקטום מלא אחר של מוח, לשום חיה בוגרת במורכבות הזאת.' },
+  { id: '06', scene: 'circuit',      seconds: 8,
+    caption: 'מתוך המפה הזאת לקחתי מעגל אחד, בדיוק את זה שאחראי לראות משהו ולזוז אליו.' },
+  { id: '07', scene: 'stand',        seconds: 10,
+    caption: 'ואז נתתי לו דוכן פלאפל. אף אחד לא לימד אותו לשחק.' },
+  { id: '08', scene: 'both',         seconds: 11,
     caption: 'אותו רגע בדיוק, פעם מהצד שלנו ופעם מהצד שלו.' },
-  { id: '07', scene: 'vision',    seconds: 10,
-    caption: 'הגבעה מראה איפה המוח שלו חושב שהמטרה נמצאת, והיא זזה איתו.' },
-  { id: '08', scene: 'pathway',   seconds: 12,
+  { id: '09', scene: 'vision',       seconds: 10,
+    caption: 'המוח שלו מקבל מספר אחד: כמה מעלות המטרה ימינה או שמאלה. זו כל האינפורמציה.' },
+  { id: '10', scene: 'pathway',      seconds: 12,
     caption: 'שני נוירונים מושכים את אותה פקודת סיבוב לכיוונים הפוכים. ההפרש ביניהם הוא הפנייה.' },
-  { id: '09', scene: 'courtship', seconds: 9, timeScale: 1,
-    caption: 'המעגל הזה לא נבנה בשביל פלאפל. בטבע זה מה שזכר מפעיל כשהוא רודף אחרי נקבה.' },
-  { id: '10', scene: 'escape',    seconds: 9, timeScale: 1,
-    caption: 'והמעגל שנבנה כדי לברוח ממכת זבובים, הוא בדיוק זה שסוטר לזבוב.' },
-  { id: '11', site: true,         seconds: 17,
+  { id: '11', scene: 'instincts',    seconds: 12, timeScale: 1,
+    caption: 'שני המעגלים האלה לא נבנו לפלאפל. אחד רודף אחרי נקבה, השני בורח ממכה.' },
+  { id: '12', site: true,            seconds: 17,
     caption: 'בניתי אתר שאפשר לראות בו את כל התהליך בזמן אמת, מהמוח ועד המנה.' },
-  { id: '12', scene: 'scale',     seconds: 10, timeScale: 1,
+  { id: '13', scene: 'scale',        seconds: 11, timeScale: 1,
     caption: 'מוח של עכבר הוא חמש מאות מוחות של זבוב. מוח אנושי הוא שש מאות אלף.' },
-  { id: '13', scene: 'future',    seconds: 12, timeScale: 1,
+  { id: '14', scene: 'future',       seconds: 13, timeScale: 1,
     caption: 'תרשים חשמלי מלא של מוח פותח דברים שלא היו אפשריים קודם.' },
-  { id: '14', scene: 'punch',     seconds: 8,
+  { id: '15', scene: 'punch',        seconds: 8,
     caption: 'בפעם הראשונה בהיסטוריה יש בידיים שלנו תרשים מלא של מוח שלם. הוא של זבוב.' },
 ];
 
 /* ----------------------------------------------------------------- main --- */
 
 async function main() {
-  const only = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  // --srt rewrites the subtitle files from the list without re-rendering a
+  // frame, which is what you want after only the captions have changed
+  const srtOnly = args.includes('--srt');
+  const only = args.filter((a) => a !== '--srt');
   const clips = only.length ? CLIPS.filter((c) => only.includes(c.id)) : CLIPS;
   if (!clips.length) { console.error('no clips matched'); process.exit(1); }
 
   mkdirSync(OUT, { recursive: true });
+  if (srtOnly) {
+    for (const clip of clips) {
+      const name = clip.id + '_' + (clip.scene || 'site');
+      writeSrt(join(OUT, name + '.srt'), clip);
+      console.log('  ' + name + '.srt');
+    }
+    return;
+  }
   mkdirSync(SCREENS, { recursive: true });
   const profile = join(tmpdir(), 'fly-capture-profile-' + Date.now());
   mkdirSync(profile, { recursive: true });

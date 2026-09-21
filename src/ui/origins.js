@@ -247,3 +247,74 @@ export function paintOrigins(root) {
     scene(ctx, w, h);
   }
 }
+
+/* ----------------------------------------------------- one panel at a time --- */
+
+/**
+ * The same four illustrations as quarters of a 2x2, so courtship and escape
+ * share one clip instead of two with an identical layout back to back.
+ */
+function cell(ctx, w, h, side, sideColor, caption, body) {
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'right';
+  ctx.font = '800 30px Heebo, sans-serif';
+  ctx.fillStyle = sideColor;
+  ctx.fillText(side, w - 20, 44);
+
+  body(h * 0.56);
+
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'center';
+  ctx.font = '700 26px Heebo, sans-serif';
+  ctx.fillStyle = 'rgba(247,242,234,0.88)';
+  ctx.fillText(caption, w / 2, h - 22);
+}
+
+export const PANELS = {
+  courtshipNature(ctx, w, h) {
+    cell(ctx, w, h, 'בטבע', 'rgba(134,217,236,0.95)', 'רודף אחרי נקבה', (cy) => {
+      FLY(ctx, w * 0.70, cy + 12, 1.7, { wild: true });
+      FLY(ctx, w * 0.30, cy - 8, 1.45, { wild: true });
+      chase(ctx, w * 0.58, cy + 2, w * 0.42, cy - 4, 'rgba(134,217,236,0.85)', 2);
+    });
+  },
+
+  courtshipOurs(ctx, w, h) {
+    cell(ctx, w, h, 'אצלנו', 'rgba(245,204,114,0.95)', 'רודף אחרי מגש', (cy) => {
+      FLY(ctx, w * 0.70, cy + 12, 1.7);
+      ctx.save();
+      ctx.translate(w * 0.30, cy - 4);
+      ctx.scale(1.5, 1.5);
+      rr(ctx, -30, -16, 60, 32, 6);
+      ctx.fillStyle = '#4a4e53'; ctx.fill();
+      FOOD.hummus(ctx, 0, 0, 0.9);
+      ctx.restore();
+      chase(ctx, w * 0.58, cy + 2, w * 0.43, cy - 4, 'rgba(245,204,114,0.9)', 2);
+    });
+  },
+
+  escapeNature(ctx, w, h) {
+    cell(ctx, w, h, 'בטבע', 'rgba(178,138,232,0.95)', 'צל מתקרב, בורח', (cy) => {
+      for (let i = 0; i < 4; i++) {
+        ctx.strokeStyle = 'rgba(224,85,63,' + (0.7 - i * 0.15) + ')';
+        ctx.lineWidth = 3;
+        circle(ctx, w * 0.28, cy, 20 + i * 15);
+        ctx.stroke();
+      }
+      FLY(ctx, w * 0.72, cy + 10, 1.65, { lunge: 0.55, wild: true });
+      chase(ctx, w * 0.44, cy - 2, w * 0.62, cy + 6, 'rgba(178,138,232,0.85)', 2);
+    });
+  },
+
+  escapeOurs(ctx, w, h) {
+    cell(ctx, w, h, 'אצלנו', 'rgba(245,204,114,0.95)', 'סוטר לזבוב', (cy) => {
+      FLY(ctx, w * 0.70, cy + 10, 1.7, { lunge: 0.5 });
+      ctx.save();
+      ctx.translate(w * 0.30, cy - 4);
+      ctx.scale(1.5, 1.5);
+      drawPest(ctx, 0, 0, 0.95, 1.2, false);
+      ctx.restore();
+      chase(ctx, w * 0.58, cy + 2, w * 0.41, cy - 4, 'rgba(178,138,232,0.9)', 2);
+    });
+  },
+};
