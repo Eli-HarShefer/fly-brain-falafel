@@ -110,7 +110,7 @@ export class BrainView {
     // frontal view down the anterior-posterior axis, where the bilateral shape
     // of the brain and both optic lobes read at once
     // framed on the head, where the connectome is; zoom out to see the animal
-    this.camera.position.set(0, 0.55, 2.85);
+    this.camera.position.set(0.15, 0.62, 3.55);
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
@@ -145,7 +145,10 @@ export class BrainView {
 
     const rp = new RenderPass(this.scene, this.camera);
     // threshold kept high so only genuine spike flares bloom, not the cloud
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.72, 0.62, 0.52);
+    // Kept modest: with the translucent head shell stacking on top of the point
+    // cloud, a stronger bloom turns the whole brain into one white blob and the
+    // structure stops reading.
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.52, 0.68, 0.62);
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(rp);
     this.composer.addPass(this.bloom);
@@ -396,7 +399,7 @@ export class BrainView {
     };
 
     // head, wrapped around the connectome; +z is posterior, so the fly faces -z
-    shell(1.22, 0.70, 0.60, 0, 0.02, 0.06, 0x8a6a34, 0.13);
+    shell(1.22, 0.70, 0.60, 0, 0.02, 0.06, 0x8a6a34, 0.085);
     // thorax
     shell(0.92, 0.82, 1.15, 0, -0.18, 1.62, 0x6b4a20, 0.15);
     // abdomen, tapering back
@@ -420,10 +423,10 @@ export class BrainView {
       const eye = new THREE.Mesh(
         new THREE.SphereGeometry(1, 22, 16),
         new THREE.MeshBasicMaterial({
-          color: 0xc0392b, transparent: true, opacity: 0.30, depthWrite: false,
+          color: 0xc0392b, transparent: true, opacity: 0.22, depthWrite: false,
         }),
       );
-      eye.scale.set(0.42, 0.52, 0.46);
+      eye.scale.set(0.40, 0.50, 0.44);
       eye.position.set(sgn * 1.02, 0.06, -0.10);
       g.add(eye);
     }
