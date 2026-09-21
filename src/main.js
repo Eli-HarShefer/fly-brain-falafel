@@ -20,6 +20,8 @@ import { VisionView } from './ui/vision.js';
 import { ModelView } from './ui/model.js';
 import { EyeView } from './ui/eye.js';
 import { ProgressView } from './ui/progress.js';
+import { MindView } from './ui/mind.js';
+import { paintOrigins } from './ui/origins.js';
 import { STATIONS } from './game/orders.js';
 import { FOOD } from './game/art.js';
 
@@ -60,6 +62,9 @@ async function main() {
   const model = new ModelView($('model'), meta);
   const eye = new EyeView($('eye'), STATIONS);
   const progress = new ProgressView($('progress'), FOOD);
+  const mind = new MindView($('mind'));
+  const originsRoot = document.querySelector('.origins');
+  paintOrigins(originsRoot);
   // scope a descending neuron by default: it integrates visibly rather than
   // sitting at rest or saturating
   brain.probe = (meta.groups.DNa02_L || [0])[0];
@@ -200,7 +205,7 @@ async function main() {
   });
 
   const ro = new ResizeObserver(() => {
-    stand.resize(); view.resize(); raster.resize(); traces.resize(); pathway.resize(); vision.resize(); model.resize(); eye.resize(); progress.resize();
+    stand.resize(); view.resize(); raster.resize(); traces.resize(); pathway.resize(); vision.resize(); model.resize(); eye.resize(); progress.resize(); paintOrigins(originsRoot);
   });
   ro.observe($('game').parentElement);
   ro.observe($('brain').parentElement);
@@ -213,7 +218,7 @@ async function main() {
   ro.observe($('progress'));
 
   // handy for poking at the running system from the console
-  window.__fly = { brain, controller, game, view, stand, pathway, vision, model, eye, progress, meta,
+  window.__fly = { brain, controller, game, view, stand, pathway, vision, model, eye, progress, mind, meta,
     get handAz() { return handAz; }, get paused() { return paused; } };
 
   $('boot').dataset.done = '1';
@@ -283,6 +288,7 @@ async function main() {
       model.draw(brain, brain.probe);
       eye.draw(game, handAz, out, dt);
       progress.draw(game, tSec);
+      mind.update(game, out, dt, handAz);
 
       $('stat-score').textContent = game.score.toLocaleString('he-IL');
       $('stat-served').textContent = game.served.toLocaleString('he-IL');

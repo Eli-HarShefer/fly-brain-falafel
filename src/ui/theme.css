@@ -435,6 +435,86 @@ a:hover { color: var(--ink); }
 .progress__honest strong { color: var(--primary-glow); }
 .progress__honest em { font-style: normal; color: var(--warn); font-weight: 600; }
 
+/* ---------- what the fly thinks is happening ---------- */
+.mind {
+  margin: 0 var(--gutter) 12px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 900px) {
+  .mind { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; }
+}
+.mind__intro { display: grid; gap: 9px; align-content: start; }
+.mind__intro h3 { font-size: 0.9rem; font-weight: 700; }
+.mind__intro p {
+  margin: 0; font-size: 0.8rem; line-height: 1.6;
+  color: var(--ink-muted); max-width: 60ch;
+}
+.mind__intro strong { color: var(--primary-glow); }
+.mind__intro b { color: var(--ink-2); font-weight: 600; }
+.mind__split {
+  padding: 11px 13px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  color: var(--ink-2) !important;
+}
+
+.mind__feed { display: grid; gap: 6px; min-width: 0; }
+.mind__head {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 10px;
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  font-weight: 600;
+  padding-inline: 4px;
+}
+.mind__rows {
+  display: grid;
+  gap: 5px;
+  min-height: 232px;
+  align-content: start;
+}
+.mind__row {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  animation: mindIn 260ms var(--ease);
+}
+@keyframes mindIn {
+  from { opacity: 0; transform: translateY(-5px); }
+}
+.mind__human { color: var(--ink-muted); }
+.mind__fly {
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  justify-content: space-between;
+}
+.mind__tag {
+  font-size: 0.62rem;
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex: none;
+}
+.mind__row--instinct .mind__fly { color: var(--n-cx); }
+.mind__row--instinct .mind__tag { background: oklch(0.3 0.07 152); color: var(--n-cx); }
+.mind__row--imposed .mind__fly { color: var(--ink-2); }
+.mind__row--imposed .mind__tag { background: var(--surface-3); color: var(--ink-muted); }
+.mind__row--reflex .mind__fly { color: var(--n-lplc2); }
+.mind__row--reflex .mind__tag { background: oklch(0.3 0.09 305); color: var(--n-lplc2); }
+
 /* ---------- compound eye view ---------- */
 .eye {
   margin: 0 var(--gutter) 12px;
@@ -516,63 +596,82 @@ a:hover { color: var(--ink); }
   font-family: var(--mono); text-align: center;
 }
 
-/* ---------- evolutionary origins ---------- */
+/* ---------- why it works at all ---------- */
 .origins {
-  margin: 0 var(--gutter) 12px;
+  margin: 0 var(--gutter) 14px;
   background: var(--surface);
   border-radius: var(--r-lg);
-  padding: 14px 14px 12px;
+  padding: 20px 18px 18px;
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
-.origins__head { display: grid; gap: 3px; }
-.origins__head h3 { font-size: 0.9rem; font-weight: 700; }
+.origins__head { display: grid; gap: 5px; }
+.origins__head h2 { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; }
+.origins__lead {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 76ch;
+}
 .origins__grid {
   display: grid;
-  /* exactly three circuits, so state that rather than letting auto-fit invent
-     empty tracks on a wide screen */
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 14px;
 }
-@media (min-width: 820px) {
+@media (min-width: 880px) {
   .origins__grid { grid-template-columns: repeat(3, 1fr); }
 }
 .origin {
   background: var(--surface-2);
   border-radius: var(--r-md);
-  padding: 12px 13px;
+  padding: 14px;
   display: grid;
-  gap: 7px;
+  gap: 9px;
   align-content: start;
+}
+.origin--muted { opacity: 0.82; }
+.origin canvas {
+  display: block;
+  width: 100%;
+  height: 150px;
+  border-radius: var(--r-sm);
+  background: oklch(0.05 0 0);
 }
 .origin__tag {
   justify-self: start;
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  padding: 3px 10px;
+  padding: 4px 13px;
   border-radius: 999px;
   color: var(--c);
   background: color-mix(in oklab, var(--c) 18%, transparent);
 }
 .origin code {
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: var(--ink-muted);
   direction: ltr;
   text-align: start;
 }
-.origin p { margin: 0; font-size: 0.78rem; line-height: 1.55; color: var(--ink-muted); }
+.origin p {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
 .origin p b { color: var(--ink-2); font-weight: 600; }
 .origin__here { color: var(--ink-2) !important; }
 .origin__here em { font-style: normal; color: var(--primary-glow); font-weight: 600; }
 .origins__note {
   margin: 0;
-  padding: 11px 13px;
+  padding: 13px 15px;
   background: oklch(0.2 0.045 22);
   border-radius: var(--r-sm);
-  font-size: 0.8rem;
-  line-height: 1.55;
+  font-size: 0.85rem;
+  line-height: 1.6;
   color: var(--ink-2);
+  max-width: 86ch;
 }
 .origins__note strong { color: var(--primary-glow); }
 
