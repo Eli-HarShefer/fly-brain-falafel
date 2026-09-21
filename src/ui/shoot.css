@@ -1,13 +1,15 @@
 /*
   Filming stage. 1080x1920, one idea per frame.
 
-  Safe areas the platforms cover, and which nothing important may enter:
-    top     9%  = 173px   (TikTok/Shorts header)
-    bottom 20%  = 384px   (caption, handle)
-    right  14%  = 151px, between 38% and 86% height (the button rail)
+  Type is deliberately large and the layout deliberately tight: on a phone held
+  at arm's length anything under about 40px is unreadable, and any gap over
+  60px is wasted screen. So the title runs at 86px, the supporting lines at 42,
+  and the visual takes whatever height is left rather than floating in a pool of
+  black. Key words are wrapped in <em> and come out in the brand yellow.
 
-  So: all text lives between y 173 and y 1536, and inside x 60..900. The visual
-  may reach wider, as long as its subject stays centred.
+  Safe areas the platforms cover, which nothing may enter:
+    top     9%  = 173px   bottom 20% = 384px
+    right  14%  = 151px, between 38% and 86% height (the button rail)
 */
 
 .shoot {
@@ -24,74 +26,112 @@
   width: 1080px;
   height: 1920px;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: 190px 48px 400px;
-  gap: 34px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: 182px 44px 392px;
+  gap: 26px;
   box-sizing: border-box;
 }
 
 /* ---------- title ---------- */
-.s-head { display: grid; gap: 14px; max-width: 840px; }
+.s-head { display: grid; gap: 12px; }
 .s-title {
   margin: 0;
-  font-size: 68px;
-  line-height: 1.1;
+  font-size: 86px;
+  line-height: 1.04;
   font-weight: 900;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--ink);
   text-wrap: balance;
 }
-.s-title em {
+.s-sub {
+  margin: 0;
+  font-size: 42px;
+  line-height: 1.28;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+.s-sub:empty { display: none; }
+
+/* the one highlight colour, on the words that carry the idea */
+.s-title em, .s-sub em, .s-note em, .s-ctx__cap em {
   font-style: normal;
   color: var(--warn);
 }
-.s-sub {
-  margin: 0;
-  font-size: 32px;
-  line-height: 1.35;
-  font-weight: 500;
-  color: var(--ink-muted);
-  text-wrap: balance;
-}
 
-/* ---------- the one visual ---------- */
+/* ---------- the visual ---------- */
 .s-body {
   position: relative;
   display: grid;
-  place-items: center;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 14px;
   min-height: 0;
-}
-.s-body canvas {
-  display: block;
-  border-radius: 20px;
-  background: oklch(0.04 0 0);
 }
 .s-body .frame {
   position: relative;
   width: 100%;
-  border-radius: 20px;
+  height: 100%;
+  border-radius: 22px;
   overflow: hidden;
   background: oklch(0.04 0 0);
 }
-.s-body .frame canvas { border-radius: 0; width: 100%; height: 100%; }
+.s-body .frame canvas { display: block; width: 100%; height: 100%; }
+
+/* a label pinned inside a frame, for the stacked comparison */
+.frame__tag {
+  position: absolute;
+  top: 18px;
+  inset-inline-start: 22px;
+  z-index: 2;
+  font-size: 30px;
+  font-weight: 800;
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: oklch(0.1 0 0 / 0.86);
+  color: var(--ink);
+}
+.frame__tag--them { color: var(--warn); }
 
 /* ---------- caption ---------- */
-.s-foot { max-width: 840px; }
+.s-foot { display: grid; gap: 16px; }
 .s-note {
   margin: 0;
-  font-size: 30px;
-  line-height: 1.4;
-  font-weight: 600;
-  color: var(--ink-2);
+  font-size: 42px;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--ink);
+  text-wrap: pretty;
 }
-.s-note b { color: var(--warn); font-weight: 800; }
 .s-note:empty { display: none; }
+
+/* ---------- context strip: small reminders of earlier scenes ---------- */
+.s-ctx {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 14px;
+}
+.s-ctx__item { display: grid; gap: 7px; }
+.s-ctx__frame {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: oklch(0.04 0 0);
+}
+.s-ctx__frame canvas { display: block; width: 100%; height: 100%; }
+.s-ctx__cap {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-align: center;
+}
 
 /* ---------- safe-area guides (?safe=1) ---------- */
 .safe[hidden] { display: none; }
-.safe {
-  position: fixed; inset: 0; pointer-events: none; z-index: 99;
-}
+.safe { position: fixed; inset: 0; pointer-events: none; z-index: 99; }
 .safe div { position: absolute; background: rgba(224,85,63,0.16); }
 .safe__top { top: 0; left: 0; right: 0; height: 173px; }
 .safe__bottom { bottom: 0; left: 0; right: 0; height: 384px; }

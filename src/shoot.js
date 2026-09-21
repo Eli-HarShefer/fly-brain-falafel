@@ -1,20 +1,21 @@
 /**
  * Filming stage.
  *
- * One scene at a time, portrait, blown up, with the clutter off. It runs the
- * real components against the real connectome - nothing here is a mock-up - but
- * it shows a single idea per frame instead of a dashboard.
+ * One idea per frame, portrait, with big type and no dashboard. It runs the
+ * real components against the real connectome - nothing here is a mock-up.
  *
  * Two things matter for the footage:
  *
  *  - Time is driven, not observed. window.S.tick(dtMs) advances the world by
- *    exactly dtMs, so the capture can feed 8 ms per frame while recording at
- *    30 fps and get genuine quarter-speed motion with every frame freshly
- *    computed. The fly at full speed serves a dish every two seconds, which
- *    reads as frantic; slowed down you can actually follow what it is doing.
+ *    exactly dtMs, so the capture can feed 11 ms per frame while recording at
+ *    30 fps and get genuine third-speed motion, every frame freshly computed.
+ *    The fly at real speed serves a dish every two seconds, which reads as
+ *    frantic; slowed down you can follow what it is doing.
  *
- *  - No numbers unless the scene is about a number. Stat bars, Hz readouts,
- *    order boards and nameplates are off by default.
+ *  - Order builds understanding. The stand comes before the eye, then both
+ *    stacked so the two points of view line up; the retinotopic bump comes
+ *    before the circuit that reads it, and the circuit scene keeps the eye and
+ *    the stand along the bottom so you never lose the thread.
  *
  * ?scene=<id>   pick the scene       ?safe=1   show the safe-area guides
  */
@@ -32,27 +33,27 @@ import { FOOD } from './game/art.js';
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 
-/** width, height of the visual for each scene. Max is about 984 x 1060. */
 const SCENES = {
   brain: {
     title: 'זה מוח אמיתי של זבוב',
-    sub: 'כל נקודה היא נוירון, במקום שהוא באמת יושב בו',
-    size: [984, 700], kind: 'brain',
+    sub: 'כל נקודה פה היא <em>נוירון אמיתי</em>, במקום שהוא באמת יושב בו בראש',
+    note: '<em>139,255</em> נוירונים. כל אחד מהם מופה, אחד-אחד.',
+    frames: [{ kind: 'brain' }],
     setup: (c) => {
       c.view.setCloudVisible(true);
       c.view.setEdgesVisible(false);
       c.view.controls.autoRotate = true;
-      c.view.controls.autoRotateSpeed = 0.75;
-      // the brain is twice as wide as it is tall; fill the frame with it
+      c.view.controls.autoRotateSpeed = 1.9;
       c.view.camera.position.set(0.02, 0.24, 2.05).add(c.view.center);
       c.view.controls.update();
     },
   },
+
   slicing: {
     title: 'ככה מיפו אותו',
-    sub: 'פרסו את המוח לאלפי פרוסות וצילמו כל אחת',
-    note: 'כל נקודה שנדלקת היא נוירון שנמצא בפרוסה הזו',
-    size: [984, 700], kind: 'brain',
+    sub: 'חתכו את המוח ל<em>אלפי פרוסות</em>, כל אחת דקה פי אלף משערה',
+    note: 'צילמו כל פרוסה ב<em>מיקרוסקופ אלקטרונים</em>, והרכיבו הכל בחזרה',
+    frames: [{ kind: 'brain' }],
     setup: (c) => {
       c.view.setCloudVisible(true);
       c.view.setEdgesVisible(false);
@@ -62,68 +63,83 @@ const SCENES = {
       c.scan = c.view.scanRange();
     },
     frame: (c, f) => {
-      const t = Math.min(1, (f / 420) * 1.05);
+      const t = Math.min(1, (f / 260) * 1.05);
       c.view.setScan(c.scan.lo + (c.scan.hi - c.scan.lo) * t);
     },
   },
+
   circuit: {
     title: 'לקחתי ממנו מעגל אחד',
-    sub: 'את זה שאחראי לראות משהו ולזוז אליו',
-    size: [984, 700], kind: 'brain',
+    sub: 'בדיוק את זה שאחראי <em>לראות משהו ולזוז אליו</em>',
+    note: '<em>4,798</em> נוירונים, ו-<em>116,960</em> חיבורים ביניהם',
+    frames: [{ kind: 'brain' }],
     setup: (c) => {
       c.view.setCloudVisible(false);
       c.view.setEdgesVisible(true);
       c.view.controls.autoRotate = true;
-      c.view.controls.autoRotateSpeed = 0.7;
+      c.view.controls.autoRotateSpeed = 1.7;
       c.view.camera.position.set(0.02, 0.22, 1.72).add(c.view.center);
       c.view.controls.update();
     },
   },
-  eye: {
-    title: 'ככה הוא <em>רואה</em>',
-    sub: 'לא מצלמה — 750 עדשות קטנות, כל אחת לכיוון אחר',
-    note: 'מגש שלם הוא <b>כמה משושים כהים</b>. זה הכל מה שיש לו.',
-    size: [984, 640], kind: 'eye',
-  },
+
   stand: {
     title: 'נתתי לו דוכן פלאפל',
-    sub: 'אף אחד לא לימד אותו לשחק',
-    size: [984, 700], kind: 'stand',
+    sub: 'אף אחד לא לימד אותו לשחק, ואף אחד <em>לא תכנת</em> אותו',
+    note: 'הוא עובר בין המגשים לבד. כל התנועה מגיעה <em>מהחיווט של המוח</em>.',
+    frames: [{ kind: 'stand' }],
   },
-  lock: {
-    title: 'הוא נועל, ומסתובב',
-    sub: 'עד שהמגש בדיוק באמצע',
-    size: [984, 700], kind: 'stand',
+
+  eye: {
+    title: 'אבל ככה הוא רואה',
+    sub: 'העין שלו היא לא מצלמה — <em>750 עדשות קטנות</em>, כל אחת לכיוון אחר',
+    note: 'התמונה שלו גסה <em>פי 100</em> משלנו. מגש שלם הוא <em>כמה משושים כהים</em>.',
+    frames: [{ kind: 'eye' }],
   },
-  pathway: {
-    title: 'זה כל מה שקורה בפנים',
-    sub: 'גלאי אחד, שני ממסרים, ופקודת סיבוב',
-    note: 'אחד נדלק כשהמטרה <b>באמצע</b>, השני כשהיא <b>בצד</b>',
-    size: [984, 620], kind: 'pathway',
+
+  both: {
+    title: 'אותו רגע, שתי עיניים',
+    sub: 'למעלה מה ש<em>אנחנו</em> רואים. למטה מה ש<em>הוא</em> רואה.',
+    note: 'בשבילו אין דוכן ואין מגש. יש <em>כתם כהה</em>, ויש איפה הוא נמצא.',
+    frames: [
+      { kind: 'stand', tag: 'מה שאנחנו רואים' },
+      { kind: 'eye', tag: 'מה שהוא רואה', tagClass: 'frame__tag--them' },
+    ],
   },
+
   vision: {
-    title: 'איפה הוא חושב שזה נמצא',
-    sub: 'הגבעה זזה כשהוא מסתובב',
-    size: [984, 640], kind: 'vision',
+    title: 'וזה מה שנכנס לו לראש',
+    sub: 'הגבעה מראה איפה המוח שלו <em>חושב</em> שהמטרה נמצאת',
+    note: 'כשהוא מסתובב, <em>הגבעה זזה איתו</em>. זו כל האינפורמציה שיש לו.',
+    frames: [{ kind: 'vision' }],
   },
+
+  pathway: {
+    title: 'ומפה מגיעה ההחלטה',
+    sub: 'שני נוירונים מושכים את אותה פקודת סיבוב <em>לכיוונים הפוכים</em>',
+    note: 'אחד נדלק כשהמטרה <em>באמצע</em> ו<em>בולם</em>. '
+        + 'השני נדלק כשהיא <em>בצד</em> ו<em>דוחף</em>. ההפרש ביניהם הוא הפנייה.',
+    frames: [{ kind: 'pathway' }],
+    context: [
+      { kind: 'eye', cap: 'מה שהוא רואה' },
+      { kind: 'stand', cap: 'מה שיוצא מזה' },
+    ],
+  },
+
   courtship: {
-    title: 'המעגל הזה לא נבנה בשביל פלאפל',
-    sub: 'זה המעגל שזכר מפעיל כשהוא רודף אחרי נקבה',
-    size: [984, 470], kind: 'origin', origin: 'courtship',
+    title: 'המעגל הזה לא נבנה לפלאפל',
+    sub: 'בטבע זה מה שזכר זבוב מפעיל כשהוא <em>רודף אחרי נקבה</em>',
+    note: 'יש לו גלאי שמזהה <em>משהו קטן שזז</em>, והוא ננעל עליו ולא משחרר. '
+        + 'אצלנו הוא נועל בדיוק אותו דבר — על <em>מגש חומוס</em>.',
+    frames: [{ kind: 'origin', origin: 'courtship' }],
   },
+
   escape: {
     title: 'וזה מעגל הבריחה',
-    sub: 'שנבנה כדי לברוח ממכת זבובים',
-    size: [984, 470], kind: 'origin', origin: 'escape',
-  },
-  scramble: {
-    title: 'ערבבתי לו את החיווט',
-    sub: 'אותם נוירונים, אותו מספר חיבורים',
-    note: 'רק מחוברים <b>לא נכון</b>',
-    size: [984, 700], kind: 'stand',
-    frame: (c, f) => {
-      if (f === 150) document.dispatchEvent(new CustomEvent('shoot:scramble'));
-    },
+    sub: 'כשמשהו <em>גדל מהר</em> מול העיניים — ציפור, או כף יד',
+    note: 'הוא מחובר לנוירון <em>הכי מהיר</em> במוח, שמעיף את הזבוב באוויר. '
+        + 'המעגל שנבנה כדי <em>לברוח</em> ממכה — הוא זה שפה <em>סוטר</em>.',
+    frames: [{ kind: 'origin', origin: 'escape' }],
   },
 };
 
@@ -134,7 +150,7 @@ async function main() {
   if (params.get('safe') === '1') $('safe').hidden = false;
 
   $('s-title').innerHTML = scene.title;
-  $('s-sub').textContent = scene.sub || '';
+  $('s-sub').innerHTML = scene.sub || '';
   $('s-note').innerHTML = scene.note || '';
 
   const [circuitBuf, meta, cloudBuf] = await Promise.all([
@@ -146,59 +162,99 @@ async function main() {
   const brain = new FlyBrain(circuit);
   const controller = new FlyController(meta, brain);
   const game = new FalafelGame(20020101);
+  const ctx = { brain, controller, game, meta, handAz: 0 };
+  const draws = [];
 
-  const body = $('s-body');
-  const [vw, vh] = scene.size;
-  const frame = document.createElement('div');
-  frame.className = 'frame';
-  frame.style.width = vw + 'px';
-  frame.style.height = vh + 'px';
-  const canvas = document.createElement('canvas');
-  frame.appendChild(canvas);
-  body.appendChild(frame);
-
-  const ctx = { brain, controller, game, meta };
-  let render;
-
-  if (scene.kind === 'brain') {
-    ctx.view = new BrainView(canvas, circuit, meta, parseCloud(cloudBuf));
-    ctx.view.resize();
-    render = (dt) => ctx.view.render(dt, brain.rate);
-  } else if (scene.kind === 'stand') {
-    const stand = new StandRenderer(canvas);
-    stand.clean = true;                       // no order board, no nameplates
-    stand.resize();
-    render = (dt, t) => stand.draw(game, ctx.handAz, t, dt, controller.lastOut);
-    ctx.stand = stand;
-  } else if (scene.kind === 'eye') {
-    const eye = new EyeView(canvas, STATIONS);
-    eye.resize();
-    render = () => eye.draw(game, ctx.handAz, controller.lastOut, 0.033);
-  } else if (scene.kind === 'pathway') {
-    const pw = new PathwayView(canvas, circuit, meta);
-    pw.clean = true;                          // shape and flow, no Hz readouts
-    pw.resize();
-    render = (dt) => pw.draw(brain, controller.lastOut, dt);
-  } else if (scene.kind === 'vision') {
-    const vv = new VisionView(canvas, meta, FOOD, STATIONS);
-    vv.resize();
-    render = (dt) => vv.draw(brain, game, ctx.handAz, controller.lastOut, dt);
-  } else if (scene.kind === 'origin') {
-    const dpr = 2;
-    canvas.width = vw * dpr; canvas.height = vh * dpr;
-    const c2 = canvas.getContext('2d');
-    c2.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // the illustrations are drawn at ~340x150; scale them up to fill the frame
-    const k = vw / 340;
-    c2.scale(k, k);
-    ORIGIN_SCENES[scene.origin](c2, 340, vh / k);
-    render = () => {};
+  /** Build one live view of `kind` into `canvas`; returns its draw function. */
+  function build(kind, canvas, opt = {}) {
+    if (kind === 'brain') {
+      ctx.view = new BrainView(canvas, circuit, meta, parseCloud(cloudBuf));
+      ctx.view.resize();
+      return (dt) => ctx.view.render(dt, brain.rate);
+    }
+    if (kind === 'stand') {
+      const s = new StandRenderer(canvas);
+      s.clean = true;
+      s.resize();
+      if (!ctx.stand) ctx.stand = s;
+      return (dt, t) => s.draw(game, ctx.handAz, t, dt, controller.lastOut);
+    }
+    if (kind === 'eye') {
+      const e = new EyeView(canvas, STATIONS);
+      e.resize();
+      return () => e.draw(game, ctx.handAz, controller.lastOut, 0.033);
+    }
+    if (kind === 'pathway') {
+      const p = new PathwayView(canvas, circuit, meta);
+      p.clean = true;
+      p.resize();
+      return (dt) => p.draw(brain, controller.lastOut, dt);
+    }
+    if (kind === 'vision') {
+      const v = new VisionView(canvas, meta, FOOD, STATIONS);
+      v.resize();
+      return (dt) => v.draw(brain, game, ctx.handAz, controller.lastOut, dt);
+    }
+    if (kind === 'origin') {
+      // a still illustration, scaled up from its 340px design width
+      const dpr = 2;
+      const r = canvas.getBoundingClientRect();
+      canvas.width = Math.round(r.width * dpr);
+      canvas.height = Math.round(r.height * dpr);
+      const c2 = canvas.getContext('2d');
+      const k = (r.width / 340) * dpr;
+      c2.setTransform(k, 0, 0, k, 0, 0);
+      ORIGIN_SCENES[opt.origin](c2, 340, r.height / (k / dpr) / dpr);
+      return () => {};
+    }
+    return () => {};
   }
 
-  ctx.handAz = 0;
+  // main frames
+  const body = $('s-body');
+  for (const f of scene.frames) {
+    const div = document.createElement('div');
+    div.className = 'frame';
+    const canvas = document.createElement('canvas');
+    div.appendChild(canvas);
+    if (f.tag) {
+      const tag = document.createElement('span');
+      tag.className = 'frame__tag' + (f.tagClass ? ' ' + f.tagClass : '');
+      tag.textContent = f.tag;
+      div.appendChild(tag);
+    }
+    body.appendChild(div);
+    draws.push({ f, canvas, div, kind: f.kind, opt: f });
+  }
+
+  // context strip, kept small under the main visual
+  if (scene.context) {
+    const strip = document.createElement('div');
+    strip.className = 's-ctx';
+    for (const c of scene.context) {
+      const item = document.createElement('div');
+      item.className = 's-ctx__item';
+      const fr = document.createElement('div');
+      fr.className = 's-ctx__frame';
+      const canvas = document.createElement('canvas');
+      fr.appendChild(canvas);
+      const cap = document.createElement('p');
+      cap.className = 's-ctx__cap';
+      cap.innerHTML = c.cap;
+      item.appendChild(fr);
+      item.appendChild(cap);
+      strip.appendChild(item);
+      draws.push({ canvas, kind: c.kind, opt: c });
+    }
+    $('s-foot').appendChild(strip);
+  }
+
+  // the canvases need their final laid-out size before the views are built
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  for (const d of draws) d.draw = build(d.kind, d.canvas, d.opt);
+
   let tSec = 0;
   let frameNo = 0;
-  document.addEventListener('shoot:scramble', () => brain.setScrambled(true));
   if (scene.setup) scene.setup(ctx);
 
   /** Advance the world by exactly dtMs and draw one frame. */
@@ -206,32 +262,34 @@ async function main() {
     const dt = dtMs / 1000;
     tSec += dt;
     if (scene.frame) scene.frame(ctx, frameNo);
-    if (scene.kind !== 'origin') {
-      game.update(dt);
-      if (!game.over) {
-        const goal = game.goal();
-        const out = controller.tick(dtMs, {
-          handAz: ctx.handAz, goalAz: goal.az, salience: 1,
-          arousal: game.arousal(), pests: game.loomingInputs(),
-        });
-        ctx.handAz += out.turnDegPerSec * dt;
-        if (ctx.handAz > 95) ctx.handAz = 95;
-        else if (ctx.handAz < -95) ctx.handAz = -95;
-        if (out.grab) { const r = game.grab(ctx.handAz); if (r && ctx.stand) ctx.stand.pulseGrab(); }
-        if (out.swat) {
-          const live = game.pests.filter((p) => !p.dead);
-          const pick = live[0];
-          if (pick && game.swat(pick.az) && ctx.stand) ctx.stand.pulseSwat(pick.az);
-        }
+
+    game.update(dt);
+    if (!game.over) {
+      const goal = game.goal();
+      const out = controller.tick(dtMs, {
+        handAz: ctx.handAz, goalAz: goal.az, salience: 1,
+        arousal: game.arousal(), pests: game.loomingInputs(),
+      });
+      ctx.handAz += out.turnDegPerSec * dt;
+      if (ctx.handAz > 95) ctx.handAz = 95;
+      else if (ctx.handAz < -95) ctx.handAz = -95;
+      if (out.grab) {
+        const r = game.grab(ctx.handAz);
+        if (r && ctx.stand) ctx.stand.pulseGrab();
+      }
+      if (out.swat) {
+        const pick = game.pests.filter((p) => !p.dead)[0];
+        if (pick && game.swat(pick.az) && ctx.stand) ctx.stand.pulseSwat(pick.az);
       }
     }
-    render(dt, tSec);
+
+    for (const d of draws) d.draw(dt, tSec);
     frameNo++;
   }
 
   window.S = { tick, ctx, scene: id, ready: true };
 
-  // also run live, so the page can just be watched in a browser
+  // also run live, so the page can simply be watched in a browser
   let last = performance.now();
   (function loop(now) {
     requestAnimationFrame(loop);
@@ -241,6 +299,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  document.body.innerHTML = '<pre style="color:#e0553f;padding:40px;font-size:24px">'
+  document.body.innerHTML = '<pre style="color:#e0553f;padding:40px;font-size:26px">'
     + e.message + '</pre>';
 });
