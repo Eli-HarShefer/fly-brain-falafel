@@ -87,9 +87,11 @@ async function main() {
   if (!reels.length) { console.error('no reels matched'); process.exit(1); }
 
   for (const r of reels) {
-    if (!existsSync(join(SRC, r.src))) {
-      throw new Error('missing source: ' + join(SRC, r.src)
-        + '\nDownload it from the article; see public/research/CREDITS.md');
+    for (const slot of r.slots) {
+      if (!existsSync(join(SRC, slot.src))) {
+        throw new Error('missing source: ' + join(SRC, slot.src)
+          + '\nDownload it from the article; see public/research/CREDITS.md');
+      }
     }
   }
 
