@@ -68,7 +68,7 @@ function toggle({ id, label, desc }, onChange) {
   return b;
 }
 
-export function buildControls(root, { brain, meta, onSpeed, onEdges, onCloud, onLesion }) {
+export function buildControls(root, { brain, meta, onSpeed, onEdges, onCloud, onBody, onLesion }) {
   root.innerHTML = '';
 
   for (const l of LESIONS) {
@@ -119,6 +119,7 @@ export function buildControls(root, { brain, meta, onSpeed, onEdges, onCloud, on
     });
     return b;
   };
+  root.appendChild(mkView('גוף הזבוב', true, onBody));
   root.appendChild(mkView('ענן 139K נוירונים', true, onCloud));
   root.appendChild(mkView('קשתות המעגל', true, onEdges));
 

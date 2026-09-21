@@ -401,6 +401,40 @@ a:hover { color: var(--ink); }
   .circuit__note { display: none; }
 }
 
+/* ---------- compound eye view ---------- */
+.eye {
+  margin: 0 var(--gutter) 12px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 900px) {
+  .eye { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+}
+.eye__scope { display: grid; gap: 8px; }
+.eye__scope canvas {
+  display: block; width: 100%; height: 230px;
+  border-radius: var(--r-sm); background: oklch(0.04 0 0);
+}
+.eye__text { display: grid; gap: 9px; align-content: start; }
+.eye__text h3 { font-size: 0.9rem; font-weight: 700; }
+.eye__text p {
+  margin: 0; font-size: 0.8rem; line-height: 1.6;
+  color: var(--ink-muted); max-width: 60ch;
+}
+.eye__text b { color: var(--ink-2); font-weight: 600; }
+.eye__text strong { color: var(--primary-glow); }
+.eye__why {
+  padding: 11px 13px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  color: var(--ink-2) !important;
+}
+.eye__why em { font-style: normal; color: var(--n-aotu); font-weight: 600; }
+
 /* ---------- how the model works ---------- */
 .model {
   margin: 0 var(--gutter) 12px;

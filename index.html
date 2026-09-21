@@ -87,7 +87,7 @@
   <section class="pane pane--brain" aria-label="המוח התלת-ממדי">
     <div class="pane__head">
       <h2>המוח</h2>
-      <p class="pane__sub">מה שקורה עכשיו בתוך הראש שלו · הצבע על נוירון כדי לזהות</p>
+      <p class="pane__sub">המוח בתוך הראש, בקנה מידה אמיתי · גלגלת להתרחק ולראות את כל הזבוב</p>
       <span class="tag tag--neural">קונקטום אמיתי</span>
     </div>
     <div class="canvas-wrap canvas-wrap--brain">
@@ -101,6 +101,35 @@
 </main>
 
 <p id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+
+<section class="eye" aria-label="נקודת המבט של הזבוב">
+  <div class="eye__scope">
+    <div class="circuit__head">
+      <h3>מה הזבוב באמת רואה</h3>
+      <p class="pane__sub">הדוכן כפי שהעין המורכבת שלו דוגמת אותו · משושה אחד = אומטידיה אחת</p>
+    </div>
+    <canvas id="eye" height="230" role="img"
+      aria-label="תצוגת עין מורכבת: הדוכן מדוגם לפי האומטידיות של הזבוב"></canvas>
+  </div>
+  <div class="eye__text">
+    <h3>ולמה הוא פועל ככה</h3>
+    <p>
+      עין של זבוב היא לא מצלמה. יש בה כ-750 <b>אומטידיות</b>, כל אחת עדשה נפרדת
+      שמכוונת לכיוון משלה, במרווח של בערך <b>5 מעלות</b> זו מזו. זה בערך
+      <strong>פי 100 יותר גס</strong> מהראייה שלך.
+    </p>
+    <p>
+      מצד שני הוא הרבה יותר מהיר: זבובים מבחינים בהבהוב עד בערך <b>200Hz</b>,
+      ואנחנו מוותרים סביב 60. <strong>כף היד שלך נראית לו איטית.</strong>
+    </p>
+    <p class="eye__why">
+      <b>ומכאן ההתנהגות.</b> ברזולוציה של 5 מעלות אין שום פרט לעבוד איתו — מגש הוא
+      כמה משושים כהים. הדבר היחיד ששווה לחשב הוא <em>איפה</em> הכתם נמצא, וזה
+      בדיוק מה ש-LC10a מדווח וכל ההיגוי במורד הזרם פועל עליו. הזבוב לא "מזהה
+      חומוס". הוא נועל על כתם קטן בשדה הראייה ומסתובב עד שהוא במרכז.
+    </p>
+  </div>
+</section>
 
 <section class="circuit vision-sec" aria-label="שדה הראייה של הזבוב">
   <div class="circuit__head">

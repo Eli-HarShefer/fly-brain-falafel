@@ -109,14 +109,15 @@ export class BrainView {
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.01, 60);
     // frontal view down the anterior-posterior axis, where the bilateral shape
     // of the brain and both optic lobes read at once
-    this.camera.position.set(0, 0.30, 1.95);
+    // framed on the head, where the connectome is; zoom out to see the animal
+    this.camera.position.set(0, 0.55, 2.85);
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.07;
     this.controls.enablePan = false;
     this.controls.minDistance = 0.9;
-    this.controls.maxDistance = 5;
+    this.controls.maxDistance = 16;   // far enough to take in the whole fly
     // The brain always turns - a still point cloud reads as a picture, a
     // turning one reads as an object. Reduced motion slows it and calms the
     // spike strobe rather than freezing the scene outright.
@@ -135,6 +136,7 @@ export class BrainView {
     this.buildCircuit(circuit, meta);
     this.buildEdges(circuit, meta);
     this.buildPicking(circuit);
+    this.buildBody();
 
     // orbit around where the mass actually is, not the bounding-box midpoint
     this.controls.target.copy(this.center);
@@ -351,6 +353,130 @@ export class BrainView {
       inDeg: this.inDeg[i],
     };
   }
+
+  /**
+   * The fly around its own brain.
+   *
+   * The scale is not invented: FlyWire coordinates are real positions inside a
+   * real head, so once the point cloud is in the scene the head has to be built
+   * around it rather than the other way round. One scene unit is about 450 um,
+   * the brain spans roughly 900 x 440 x 280 um, and a head is about 800 um
+   * across - which is why the brain very nearly fills it. The optic lobes are
+   * the wide parts at the sides, and they are most of the volume.
+   *
+   * The body is translucent with depthWrite off so the neurons keep glowing
+   * through it.
+   */
+  buildBody() {
+    const g = new THREE.Group();
+
+    const shell = (rx, ry, rz, x, y, z, color, opacity) => {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 28, 20),
+        new THREE.MeshBasicMaterial({
+          color, transparent: true, opacity,
+          depthWrite: false, side: THREE.DoubleSide,
+        }),
+      );
+      m.scale.set(rx, ry, rz);
+      m.position.set(x, y, z);
+      g.add(m);
+      // a faint wireframe so the silhouette reads against the glow
+      const w = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 16, 11),
+        new THREE.MeshBasicMaterial({
+          color, wireframe: true, transparent: true,
+          opacity: opacity * 0.5, depthWrite: false,
+        }),
+      );
+      w.scale.copy(m.scale);
+      w.position.copy(m.position);
+      g.add(w);
+      return m;
+    };
+
+    // head, wrapped around the connectome; +z is posterior, so the fly faces -z
+    shell(1.22, 0.70, 0.60, 0, 0.02, 0.06, 0x8a6a34, 0.13);
+    // thorax
+    shell(0.92, 0.82, 1.15, 0, -0.18, 1.62, 0x6b4a20, 0.15);
+    // abdomen, tapering back
+    shell(0.80, 0.74, 1.45, 0, -0.30, 3.65, 0xa8813a, 0.15);
+    // abdominal banding
+    for (let i = 0; i < 4; i++) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1, 0.045, 8, 36),
+        new THREE.MeshBasicMaterial({
+          color: 0x2a1c0d, transparent: true, opacity: 0.22, depthWrite: false,
+        }),
+      );
+      const t = i / 4;
+      ring.scale.set(0.80 * (1 - t * 0.42), 0.74 * (1 - t * 0.42), 1);
+      ring.position.set(0, -0.30, 2.6 + i * 0.72);
+      g.add(ring);
+    }
+
+    // compound eyes: the one part that should read solid and red
+    for (const sgn of [-1, 1]) {
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 22, 16),
+        new THREE.MeshBasicMaterial({
+          color: 0xc0392b, transparent: true, opacity: 0.30, depthWrite: false,
+        }),
+      );
+      eye.scale.set(0.42, 0.52, 0.46);
+      eye.position.set(sgn * 1.02, 0.06, -0.10);
+      g.add(eye);
+    }
+
+    // Wings, swept back over the abdomen. The shape is drawn with its length
+    // along +y so that a +90 deg turn about X lays it flat in the XZ plane with
+    // the length running backwards; drawing it along x instead leaves the wings
+    // sticking straight out sideways.
+    const wingShape = new THREE.Shape();
+    wingShape.moveTo(0, 0);
+    wingShape.bezierCurveTo(0.55, 0.6, 0.92, 2.9, 0.34, 4.3);
+    wingShape.bezierCurveTo(-0.18, 3.0, -0.44, 1.2, 0, 0);
+    const wingGeo = new THREE.ShapeGeometry(wingShape, 20);
+    for (const sgn of [-1, 1]) {
+      const wing = new THREE.Mesh(wingGeo, new THREE.MeshBasicMaterial({
+        color: 0xcfe6f0, transparent: true, opacity: 0.10,
+        depthWrite: false, side: THREE.DoubleSide,
+      }));
+      wing.position.set(sgn * 0.42, 0.62, 1.35);
+      wing.rotation.x = Math.PI / 2;
+      wing.rotation.z = sgn * 0.30;     // splay outward
+      wing.rotation.y = sgn * -0.16;    // and tilt up a little
+      wing.scale.set(sgn, 1, 1);
+      g.add(wing);
+    }
+
+    // legs
+    const legMat = new THREE.LineBasicMaterial({
+      color: 0x5a4020, transparent: true, opacity: 0.34, depthWrite: false,
+    });
+    const legs = [
+      [0.55, 0.55, -0.9, 1.5, -1.3], [0.75, 1.55, -1.0, 1.9, -0.2],
+      [0.70, 2.35, -1.0, 2.0, 1.1],
+    ];
+    for (const sgn of [-1, 1]) {
+      for (const [ox, oz, kx, ky, kz] of legs) {
+        const pts = [
+          new THREE.Vector3(sgn * ox, -0.6, oz),
+          new THREE.Vector3(sgn * (ox + 0.75), -1.15, oz + kz * 0.25),
+          new THREE.Vector3(sgn * (ox + kx * -1), -1.05 - ky * 0.25, oz + kz * 0.7),
+        ];
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        g.add(new THREE.Line(geo, legMat));
+      }
+    }
+
+    // sit the whole animal on the brain's own centre
+    g.position.copy(this.center);
+    this.body = g;
+    this.scene.add(g);
+  }
+
+  setBodyVisible(v) { if (this.body) this.body.visible = v; }
 
   setEdgesVisible(v) { if (this.edges) this.edges.visible = v; }
   setCloudVisible(v) { if (this.cloud) this.cloud.visible = v; }
