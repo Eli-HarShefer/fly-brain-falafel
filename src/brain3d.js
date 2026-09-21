@@ -443,7 +443,7 @@ export class BrainView {
           // soft in the middle, with a hot rim so the section has an edge
           float body = 1.0 - smoothstep(0.1, 1.0, length(q));
           float rim = smoothstep(0.86, 1.0, max(abs(q.x), abs(q.y)));
-          float a = (body * 0.10 + rim * 1.15) * uA;
+          float a = (body * 0.09 + rim * 0.82) * uA;
           gl_FragColor = vec4(vec3(0.46, 0.80, 0.97) * a, a);
         }`,
     });

@@ -66,7 +66,7 @@ const SCENES = {
       // blade cutting through; from the front it faces the camera and washes
       // the whole brain out. So: no full auto-rotate, only a slow sway.
       c.view.controls.autoRotate = false;
-      c.view.camera.position.set(2.30, 0.26, 0.52).add(c.view.center);
+      c.view.camera.position.set(2.62, 0.28, 0.56).add(c.view.center);
       c.view.controls.update();
       c.base = c.view.camera.position.clone().sub(c.view.center);
       c.scan = c.view.scanRange();
@@ -89,7 +89,7 @@ const SCENES = {
         c.view.setScanPlane(null);
       }
       const a = Math.sin(f / 118) * 0.17;
-      const dolly = 1 - Math.min(1, f / 300) * 0.16;
+      const dolly = 1 - Math.min(1, f / 300) * 0.13;
       const v = c.base;
       c.view.camera.position.set(
         (v.x * Math.cos(a) - v.z * Math.sin(a)) * dolly,
