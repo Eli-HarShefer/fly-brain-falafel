@@ -101,6 +101,9 @@ export class FalafelGame {
     this.flyLineT = 0;
     this.quipCooldown = 4;
     this.nextIdleQuip = 12;
+    // one entry per dish handed over, so the session arc can be drawn
+    this.serveLog = [];
+    this.lastServeT = 0;
     this.spawnCustomer();
   }
 
@@ -246,6 +249,15 @@ export class FalafelGame {
     const bonus = Math.round((1 - c.stress) * 10);
     this.score += 10 + items * 4 + bonus;
     this.served += 1;
+    this.serveLog.push({
+      t: this.t,
+      gap: this.t - this.lastServeT,     // how long this dish took
+      items,
+      stress: c.stress,
+      mk: c.mk.name,
+    });
+    this.lastServeT = this.t;
+    if (this.serveLog.length > 400) this.serveLog.shift();
     this.plate = { pita: false, hummus: 0, balls: 0, salad: 0, chips: 0 };
     this.push('serve', stationAz('pita'), 'מנה!');
     this.quip('serve', 0.3);

@@ -19,6 +19,7 @@ import { PathwayView } from './ui/pathway.js';
 import { VisionView } from './ui/vision.js';
 import { ModelView } from './ui/model.js';
 import { EyeView } from './ui/eye.js';
+import { ProgressView } from './ui/progress.js';
 import { STATIONS } from './game/orders.js';
 import { FOOD } from './game/art.js';
 
@@ -58,6 +59,7 @@ async function main() {
   const vision = new VisionView($('vision'), meta, FOOD, STATIONS);
   const model = new ModelView($('model'), meta);
   const eye = new EyeView($('eye'), STATIONS);
+  const progress = new ProgressView($('progress'), FOOD);
   // scope a descending neuron by default: it integrates visibly rather than
   // sitting at rest or saturating
   brain.probe = (meta.groups.DNa02_L || [0])[0];
@@ -84,7 +86,6 @@ async function main() {
     onSpeed: (v) => { controller.simSpeed = v; $('stat-speed').textContent = v.toFixed(2).replace(/0$/, '') + '×'; },
     onEdges: (v) => view.setEdgesVisible(v),
     onCloud: (v) => view.setCloudVisible(v),
-    onBody: (v) => view.setBodyVisible(v),
     onLesion: () => {
       lesionActive = document.querySelectorAll('#controls .ctl[aria-pressed="true"][data-id]').length > 0;
     },
@@ -199,7 +200,7 @@ async function main() {
   });
 
   const ro = new ResizeObserver(() => {
-    stand.resize(); view.resize(); raster.resize(); traces.resize(); pathway.resize(); vision.resize(); model.resize(); eye.resize();
+    stand.resize(); view.resize(); raster.resize(); traces.resize(); pathway.resize(); vision.resize(); model.resize(); eye.resize(); progress.resize();
   });
   ro.observe($('game').parentElement);
   ro.observe($('brain').parentElement);
@@ -209,9 +210,10 @@ async function main() {
   ro.observe($('vision'));
   ro.observe($('model'));
   ro.observe($('eye'));
+  ro.observe($('progress'));
 
   // handy for poking at the running system from the console
-  window.__fly = { brain, controller, game, view, stand, pathway, vision, model, eye, meta,
+  window.__fly = { brain, controller, game, view, stand, pathway, vision, model, eye, progress, meta,
     get handAz() { return handAz; }, get paused() { return paused; } };
 
   $('boot').dataset.done = '1';
@@ -280,6 +282,7 @@ async function main() {
       vision.draw(brain, game, handAz, out, dt);
       model.draw(brain, brain.probe);
       eye.draw(game, handAz, out, dt);
+      progress.draw(game, tSec);
 
       $('stat-score').textContent = game.score.toLocaleString('he-IL');
       $('stat-served').textContent = game.served.toLocaleString('he-IL');
@@ -301,6 +304,7 @@ async function main() {
       vision.draw(brain, game, handAz, controller.lastOut || null, dt);
       model.draw(brain, brain.probe);
       eye.draw(game, handAz, controller.lastOut || null, dt);
+      progress.draw(game, tSec);
     }
 
     raster.overlay();
