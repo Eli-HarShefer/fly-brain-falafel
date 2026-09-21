@@ -27,8 +27,12 @@ import { BrainView, parseCloud } from './brain3d.js';
 import { PathwayView } from './ui/pathway.js';
 import { VisionView } from './ui/vision.js';
 import { EyeView } from './ui/eye.js';
-import { SCENES as ORIGIN_SCENES } from './ui/origins.js';
+import { STACKED as ORIGIN_STACKED } from './ui/origins.js';
+import { drawScale, drawFuture } from './ui/scale.js';
 import { FOOD } from './game/art.js';
+
+/** Where the connectome files sit, relative to wherever the page is mounted. */
+const DATA = import.meta.env.BASE_URL + 'data/';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -57,14 +61,41 @@ const SCENES = {
     setup: (c) => {
       c.view.setCloudVisible(true);
       c.view.setEdgesVisible(false);
+      // A lateral view on purpose. The imaging sheet lies across the
+      // anterior-posterior axis, so from the side it is edge-on and reads as a
+      // blade cutting through; from the front it faces the camera and washes
+      // the whole brain out. So: no full auto-rotate, only a slow sway.
       c.view.controls.autoRotate = false;
-      c.view.camera.position.set(1.95, 0.34, 1.62).add(c.view.center);
+      c.view.camera.position.set(2.30, 0.26, 0.52).add(c.view.center);
       c.view.controls.update();
+      c.base = c.view.camera.position.clone().sub(c.view.center);
       c.scan = c.view.scanRange();
     },
+    /**
+     * Three beats in twelve seconds: the blade arrives, it cuts the whole way
+     * through while the brain sways and the camera creeps in, and then the
+     * volume comes back together whole - which is the part of the sentence
+     * people miss, that the slices were put back.
+     */
     frame: (c, f) => {
-      const t = Math.min(1, (f / 260) * 1.05);
-      c.view.setScan(c.scan.lo + (c.scan.hi - c.scan.lo) * t);
+      const { lo, hi } = c.scan;
+      const sweep = Math.min(1, Math.max(0, (f - 24) / 244));
+      if (f < 292) {
+        const z = lo + (hi - lo) * sweep;
+        c.view.setScan(z, 0.05);
+        c.view.setScanPlane(z, Math.min(1, f / 24));
+      } else {
+        c.view.setScan(null);
+        c.view.setScanPlane(null);
+      }
+      const a = Math.sin(f / 118) * 0.17;
+      const dolly = 1 - Math.min(1, f / 300) * 0.16;
+      const v = c.base;
+      c.view.camera.position.set(
+        (v.x * Math.cos(a) - v.z * Math.sin(a)) * dolly,
+        v.y * dolly,
+        (v.x * Math.sin(a) + v.z * Math.cos(a)) * dolly,
+      ).add(c.view.center);
     },
   },
 
@@ -130,16 +161,51 @@ const SCENES = {
     title: 'המעגל הזה לא נבנה לפלאפל',
     sub: 'בטבע זה מה שזכר זבוב מפעיל כשהוא <em>רודף אחרי נקבה</em>',
     note: 'יש לו גלאי שמזהה <em>משהו קטן שזז</em>, והוא ננעל עליו ולא משחרר. '
-        + 'אצלנו הוא נועל בדיוק אותו דבר — על <em>מגש חומוס</em>.',
+        + 'אצלנו הוא ננעל בדיוק אותו דבר, רק שהפעם זה <em>מגש חומוס</em>.',
     frames: [{ kind: 'origin', origin: 'courtship' }],
   },
 
   escape: {
     title: 'וזה מעגל הבריחה',
-    sub: 'כשמשהו <em>גדל מהר</em> מול העיניים — ציפור, או כף יד',
+    sub: 'כשמשהו <em>גדל מהר</em> מול העיניים, כמו ציפור או כף יד',
     note: 'הוא מחובר לנוירון <em>הכי מהיר</em> במוח, שמעיף את הזבוב באוויר. '
-        + 'המעגל שנבנה כדי <em>לברוח</em> ממכה — הוא זה שפה <em>סוטר</em>.',
+        + 'המעגל שנבנה כדי <em>לברוח</em> ממכה הוא בדיוק זה שפה <em>סוטר</em>.',
     frames: [{ kind: 'origin', origin: 'escape' }],
+  },
+
+  scale: {
+    title: 'וזה עוד לא כלום',
+    sub: 'ספרנו כמה מוחות של זבוב נכנסים <em>במוח של עכבר</em>. יצא 503.',
+    note: 'המוח השלם היחיד שיש לאנושות תרשים מלא שלו הוא של זבוב. '
+        + 'היעד הבא, מוח של עכבר, גדול <em>פי 500</em>.',
+    frames: [{ kind: 'still', paint: drawScale }],
+  },
+
+  future: {
+    title: 'ולמה זה משנה',
+    sub: 'תרשים חשמלי מלא של מוח פותח שלושה דברים שלא היו אפשריים קודם',
+    note: 'הזבוב הזה הוא <em>הוכחת היתכנות</em>. אותה שיטה בדיוק רצה עכשיו על מוחות גדולים יותר.',
+    frames: [{ kind: 'still', paint: drawFuture }],
+  },
+
+  punch: {
+    title: 'בפעם הראשונה בהיסטוריה',
+    sub: 'יש בידיים שלנו <em>תרשים חשמלי מלא</em> של מוח שלם',
+    note: 'הוא של זבוב, והוא משחק מלך הפלאפל. <em>לעת עתה</em>.',
+    frames: [{ kind: 'brain' }],
+    setup: (c) => {
+      c.view.setCloudVisible(true);
+      c.view.setEdgesVisible(true);
+      c.view.controls.autoRotate = true;
+      c.view.controls.autoRotateSpeed = 1.5;
+      c.view.camera.position.set(0.02, 0.26, 1.55).add(c.view.center);
+      c.view.controls.update();
+    },
+    // pull back, so the last thing on screen is the whole brain
+    frame: (c) => {
+      c.view.camera.position.sub(c.view.center).multiplyScalar(1.0013)
+        .add(c.view.center);
+    },
   },
 };
 
@@ -154,9 +220,9 @@ async function main() {
   $('s-note').innerHTML = scene.note || '';
 
   const [circuitBuf, meta, cloudBuf] = await Promise.all([
-    fetch('/data/circuit.bin').then((r) => r.arrayBuffer()),
-    fetch('/data/circuit.json').then((r) => r.json()),
-    fetch('/data/cloud.bin').then((r) => r.arrayBuffer()),
+    fetch(DATA + 'circuit.bin').then((r) => r.arrayBuffer()),
+    fetch(DATA + 'circuit.json').then((r) => r.json()),
+    fetch(DATA + 'cloud.bin').then((r) => r.arrayBuffer()),
   ]);
   const circuit = parseCircuit(circuitBuf);
   const brain = new FlyBrain(circuit);
@@ -187,24 +253,35 @@ async function main() {
     if (kind === 'pathway') {
       const p = new PathwayView(canvas, circuit, meta);
       p.clean = true;
+      p.zoom = 2.4;
       p.resize();
       return (dt) => p.draw(brain, controller.lastOut, dt);
     }
     if (kind === 'vision') {
       const v = new VisionView(canvas, meta, FOOD, STATIONS);
+      v.zoom = 2.3;
       v.resize();
       return (dt) => v.draw(brain, game, ctx.handAz, controller.lastOut, dt);
     }
-    if (kind === 'origin') {
-      // a still illustration, scaled up from its 340px design width
+    if (kind === 'still') {
       const dpr = 2;
       const r = canvas.getBoundingClientRect();
       canvas.width = Math.round(r.width * dpr);
       canvas.height = Math.round(r.height * dpr);
       const c2 = canvas.getContext('2d');
-      const k = (r.width / 340) * dpr;
-      c2.setTransform(k, 0, 0, k, 0, 0);
-      ORIGIN_SCENES[opt.origin](c2, 340, r.height / (k / dpr) / dpr);
+      c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+      opt.paint(c2, r.width, r.height);
+      return () => {};
+    }
+    if (kind === 'origin') {
+      // a still illustration, drawn in CSS pixels at the frame's real size
+      const dpr = 2;
+      const r = canvas.getBoundingClientRect();
+      canvas.width = Math.round(r.width * dpr);
+      canvas.height = Math.round(r.height * dpr);
+      const c2 = canvas.getContext('2d');
+      c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ORIGIN_STACKED[opt.origin](c2, r.width, r.height);
       return () => {};
     }
     return () => {};
@@ -246,7 +323,7 @@ async function main() {
       strip.appendChild(item);
       draws.push({ canvas, kind: c.kind, opt: c });
     }
-    $('s-foot').appendChild(strip);
+    document.querySelector('.s-foot').appendChild(strip);
   }
 
   // the canvases need their final laid-out size before the views are built

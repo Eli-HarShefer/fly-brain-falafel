@@ -49,11 +49,45 @@ const EDGES = [
 
 const NW = 92, NH = 26;
 
+/**
+ * Plain-language names, used when the diagram is filmed rather than read.
+ *
+ * On the page the cell-type names are the point - you can look them up in
+ * FlyWire. In a video they are noise: what a viewer needs is that one of the
+ * pair brakes and the other pushes, and that the difference is the turn.
+ */
+const HE = {
+  lc10aL: 'עין שמאל', lc10aR: 'עין ימין',
+  a19L: 'בולם', a19R: 'בולם',
+  a25L: 'דוחף', a25R: 'דוחף',
+  dn02L: 'סיבוב שמאלה', dn02R: 'סיבוב ימינה',
+};
+
+/** Filmed colours: the brake reads inhibitory, the push reads excitatory. */
+const BIG_TINT = {
+  a19L: INH, a19R: INH,
+  a25L: EXC, a25R: EXC,
+};
+
+/**
+ * The filmed layout: [column, row] for the chase path only. The escape path
+ * gets its own scene, so leaving it out here costs nothing and buys the room
+ * to make eight boxes legible on a phone.
+ */
+const BIG_PLACE = {
+  lc10aL: [0, 0.4], lc10aR: [0, 2.6],
+  a19L: [1, 0], a25L: [1, 1], a19R: [1, 2], a25R: [1, 3],
+  dn02L: [2, 1.05], dn02R: [2, 2.55],
+};
+
 export class PathwayView {
   constructor(canvas, circuit, meta) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    /** Multiplies every drawn size. 1 on the page, more on the filming stage. */
+    this.zoom = 1;
+    this.flip = 1;
     this.meta = meta;
     this.nodes = new Map(NODES.map((n) => [n.id, { ...n }]));
 
@@ -88,12 +122,16 @@ export class PathwayView {
     const r = this.canvas.getBoundingClientRect();
     this.w = Math.max(360, Math.round(r.width * this.dpr));
     this.h = Math.max(120, Math.round((r.height || 190) * this.dpr));
+    this.u = this.dpr * this.zoom;
     this.canvas.width = this.w;
     this.canvas.height = this.h;
     this.layout();
   }
 
   layout() {
+    if (this.clean) return this.layoutBig();
+    this.flip = 1;
+    this.shown = this.edges;
     const padX = 66 * this.dpr, padY = 16 * this.dpr;
     // the output column carries a 88px gauge, so keep half of it clear of the
     // right edge rather than letting it spill
@@ -109,12 +147,66 @@ export class PathwayView {
     this.colX = colX;
     this.rowH = rowH;
     this.padY = padY;
+    for (const n of this.nodes.values()) n.hidden = false;
+    this.spreadEnds();
+  }
+
+  /**
+   * The filmed layout. Three columns, big boxes, and signal running right to
+   * left so the diagram reads the same direction as the Hebrew around it.
+   */
+  layoutBig() {
+    const d = this.dpr;
+    const nw = Math.min(300 * d, this.w * 0.29);
+    const nh = 104 * d;
+    const padX = 16 * d;
+    const colX = [this.w - padX - nw / 2, this.w / 2, padX + nw / 2];
+    const padY = 22 * d;
+    const rowH = (this.h - padY * 2 - 46 * d) / 4;
+    for (const n of this.nodes.values()) {
+      const p = BIG_PLACE[n.id];
+      n.hidden = !p;
+      if (!p) continue;
+      n.x = colX[p[0]];
+      n.y = padY + (p[1] + 0.5) * rowH;
+      n.w = nw;
+      n.h = nh;
+    }
+    this.shown = this.edges.filter(
+      (e) => !this.nodes.get(e.from).hidden && !this.nodes.get(e.to).hidden);
+    this.colX = colX;
+    this.rowH = rowH;
+    this.padY = padY;
+    this.flip = -1;
+    this.spreadEnds();
+  }
+
+  /**
+   * Two edges into the same box would otherwise land on the same point, and
+   * their +/- markers would sit on top of each other - which is exactly the
+   * thing this diagram exists to show. Fan them out across the box edge in the
+   * order they are listed, which is already top to bottom.
+   */
+  spreadEnds() {
+    const nIn = new Map(), nOut = new Map();
+    for (const e of this.shown) {
+      nIn.set(e.to, (nIn.get(e.to) || 0) + 1);
+      nOut.set(e.from, (nOut.get(e.from) || 0) + 1);
+    }
+    const seenIn = new Map(), seenOut = new Map();
+    for (const e of this.shown) {
+      const i = seenIn.get(e.to) || 0; seenIn.set(e.to, i + 1);
+      const o = seenOut.get(e.from) || 0; seenOut.set(e.from, o + 1);
+      const ti = nIn.get(e.to), to = nOut.get(e.from);
+      e.oy2 = ti > 1 ? ((i + 0.5) / ti - 0.5) * this.nodes.get(e.to).h * 0.58 : 0;
+      e.oy1 = to > 1 ? ((o + 0.5) / to - 0.5) * this.nodes.get(e.from).h * 0.58 : 0;
+    }
   }
 
   /** @param rates keyed by group name, in Hz; plus steer/grab/swat state */
   draw(brain, out, dt) {
     const ctx = this.ctx;
-    const d = this.dpr;
+    const d = this.u || this.dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#0a0808';
     ctx.fillRect(0, 0, this.w, this.h);
@@ -129,13 +221,17 @@ export class PathwayView {
     this.spawnPulses(dt);
     this.drawEdges(ctx, d);
     this.drawPulses(ctx, d, dt);
-    for (const n of this.nodes.values()) this.drawNode(ctx, n, d);
+    for (const n of this.nodes.values()) {
+      if (n.hidden) continue;
+      if (this.clean) this.drawNodeBig(ctx, n);
+      else this.drawNode(ctx, n, d);
+    }
     if (!this.clean) this.drawOutput(ctx, out, d);
     this.drawColumnLabels(ctx, d);
   }
 
   spawnPulses(dt) {
-    for (const e of this.edges) {
+    for (const e of this.shown) {
       const a = this.nodes.get(e.from);
       if (a.lit < 0.12) continue;
       // spawn rate scales with how hard the source is firing
@@ -148,14 +244,15 @@ export class PathwayView {
 
   edgePath(e) {
     const a = this.nodes.get(e.from), b = this.nodes.get(e.to);
-    const x1 = a.x + a.w / 2, y1 = a.y;
-    const x2 = b.x - b.w / 2, y2 = b.y;
+    const f = this.flip;
+    const x1 = a.x + f * a.w / 2, y1 = a.y + (e.oy1 || 0);
+    const x2 = b.x - f * b.w / 2, y2 = b.y + (e.oy2 || 0);
     const cx = (x1 + x2) / 2;
     return { x1, y1, x2, y2, cx };
   }
 
   drawEdges(ctx, d) {
-    for (const e of this.edges) {
+    for (const e of this.shown) {
       const p = this.edgePath(e);
       const col = e.sign < 0 ? INH : EXC;
       const a = this.nodes.get(e.from);
@@ -169,9 +266,9 @@ export class PathwayView {
 
       // sign marker at the target end
       ctx.fillStyle = 'rgba(' + col.join(',') + ',' + (0.5 + a.lit * 0.5).toFixed(3) + ')';
-      ctx.font = (9 * d).toFixed(0) + 'px JetBrains Mono, monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText(e.sign < 0 ? '−' : '+', p.x2 - 3 * d, p.y2 - 4 * d);
+      ctx.font = '700 ' + (9 * d).toFixed(0) + 'px JetBrains Mono, monospace';
+      ctx.textAlign = this.flip < 0 ? 'left' : 'right';
+      ctx.fillText(e.sign < 0 ? '−' : '+', p.x2 - this.flip * 3 * d, p.y2 - 4 * d);
     }
   }
 
@@ -230,6 +327,52 @@ export class PathwayView {
     }
   }
 
+  /**
+   * The filmed node: the Hebrew name big enough to read on a phone, with the
+   * real cell type underneath so the claim stays checkable, and the live firing
+   * rate filling the box from the bottom.
+   */
+  drawNodeBig(ctx, n) {
+    const d = this.dpr;
+    const x = n.x - n.w / 2, y = n.y - n.h / 2;
+    const rad = 16 * d;
+    // in the filmed version the colour says what the box does, not where it
+    // sits: the brake carries the inhibitory colour, the push the excitatory
+    const tint = BIG_TINT[n.id] || n.tint;
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, n.w, n.h, rad);
+    ctx.fillStyle = 'rgba(20,18,17,0.98)';
+    ctx.fill();
+
+    if (n.lit > 0.01) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(x, y, n.w, n.h, rad);
+      ctx.clip();
+      ctx.fillStyle = 'rgba(' + tint.join(',') + ',' + (0.12 + n.lit * 0.40).toFixed(3) + ')';
+      ctx.fillRect(x, y + n.h * (1 - n.lit), n.w, n.h * n.lit);
+      ctx.restore();
+    }
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, n.w, n.h, rad);
+    ctx.strokeStyle = 'rgba(' + tint.join(',') + ',' + (0.35 + n.lit * 0.6).toFixed(3) + ')';
+    ctx.lineWidth = 2.4 * d;
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.direction = 'rtl';
+    ctx.fillStyle = 'rgba(247,242,234,' + (0.78 + n.lit * 0.22).toFixed(3) + ')';
+    ctx.font = '800 ' + (30 * d).toFixed(0) + 'px Heebo, sans-serif';
+    ctx.fillText(HE[n.id] || n.label, n.x, n.y + 2 * d);
+
+    ctx.direction = 'ltr';
+    ctx.fillStyle = 'rgba(' + tint.join(',') + ',0.8)';
+    ctx.font = '600 ' + (17 * d).toFixed(0) + 'px JetBrains Mono, monospace';
+    ctx.fillText(n.label, n.x, n.y + 28 * d);
+  }
+
   /** Steering gauge, grab lamp and swat lamp. */
   drawOutput(ctx, out, d) {
     const x = this.colX[3];
@@ -281,6 +424,17 @@ export class PathwayView {
   }
 
   drawColumnLabels(ctx, d) {
+    if (this.clean) {
+      const labels = ['מה שהעין תופסת', 'שני הנוירונים שמחליטים', 'פקודת הסיבוב'];
+      ctx.textAlign = 'center';
+      ctx.direction = 'rtl';
+      ctx.fillStyle = 'rgba(179,165,149,0.75)';
+      ctx.font = '700 ' + (26 * this.dpr).toFixed(0) + 'px Heebo, sans-serif';
+      for (let i = 0; i < 3; i++) {
+        ctx.fillText(labels[i], this.colX[i], this.h - 12 * this.dpr);
+      }
+      return;
+    }
     const labels = ['חישה', 'ממסר', 'פלט מוטורי', 'פעולה'];
     ctx.textAlign = 'center';
     ctx.direction = 'rtl';

@@ -237,6 +237,8 @@ export function drawFly(ctx, x, y, opts) {
   const {
     tilt = 0, wing = 0, snap = 0, onTarget = false,
     carrying = null, stress = 0, lunge = 0,
+    // a plain fruit fly, with no job: used by the "in nature" illustrations
+    wild = false,
   } = opts;
 
   ctx.save();
@@ -305,6 +307,7 @@ export function drawFly(ctx, x, y, opts) {
   ctx.fill();
 
   // --- apron ------------------------------------------------------------------
+  if (!wild) {
   ctx.fillStyle = '#efe7d8';
   ctx.beginPath();
   ctx.moveTo(-6, -3);
@@ -316,6 +319,7 @@ export function drawFly(ctx, x, y, opts) {
   ctx.strokeStyle = '#c9bda6';
   ctx.lineWidth = 1;
   ctx.stroke();
+  }
 
   // --- head --------------------------------------------------------------------
   ctx.fillStyle = '#7a5525';
@@ -349,6 +353,7 @@ export function drawFly(ctx, x, y, opts) {
   }
 
   // --- toque --------------------------------------------------------------------
+  if (!wild) {
   ctx.fillStyle = '#f7f2ea';
   ctx.beginPath();
   ctx.ellipse(0, -26.5, 8, 3.4, 0, 0, Math.PI * 2);
@@ -364,6 +369,7 @@ export function drawFly(ctx, x, y, opts) {
   ctx.beginPath();
   ctx.ellipse(0, -27, 8, 2.4, 0, 0, Math.PI);
   ctx.fill();
+  }
 
   // --- what it is carrying --------------------------------------------------------
   if (carrying === 'pita') {

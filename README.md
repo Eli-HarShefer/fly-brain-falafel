@@ -6,6 +6,22 @@
 
 הלקוחות הם חברי כנסת מהקואליציה. הם מאבדים סבלנות.
 
+**האתר החי:** https://eli-harshefer.github.io/fly-brain-falafel/
+
+---
+
+## להריץ מקומית
+
+```bash
+npm install
+npm run dev
+```
+
+`npm run build` בונה ל-`dist/`, `npm run preview` מגיש את הבנייה על פורט 4173.
+כל הנתונים כבר בריפו תחת `public/data/`, אז אין צורך להריץ את החילוץ מחדש.
+כדי לבנות אותם מאפס: `pip install -r requirements.txt` ואז `npm run extract`
+(מוריד כ-60MB מה-bucket הציבורי של FlyWire), ו-`npm run verify` לבדיקת רגרסיה.
+
 ---
 
 ## מה באמת עושה פה המוח

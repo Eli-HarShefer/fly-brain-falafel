@@ -793,3 +793,112 @@ a:hover { color: var(--ink); }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================================================
+   Reading layout
+
+   Everything above grew one section at a time, and it shows: nine bands, each
+   with its own width, its own padding, its own heading size and its own idea
+   of how much air a section deserves. Read top to bottom on a wide screen it
+   looks like a dashboard someone kept bolting panels onto.
+
+   This layer does not touch what any section contains. It only makes them
+   agree: one measure, one rhythm, one type scale, and a numbered marker in the
+   gap above each band so the page reads as a sequence you are being walked
+   through rather than a pile of widgets.
+   ========================================================================== */
+
+:root {
+  --page: 1140px;
+  --gutter: 26px;
+  --sec-gap: 38px;
+}
+
+html, body { font-size: 16px; }
+
+/* one measure for every band */
+.topbar__inner,
+.stage, .origins, .progress, .mind, .eye, .circuit, .model, .telemetry, .credits {
+  inline-size: min(var(--page), 100% - var(--gutter) * 2);
+  margin-inline: auto;
+}
+
+/* the cards */
+.origins, .progress, .mind, .eye, .circuit, .model {
+  margin-block: 0 var(--sec-gap);
+  padding: 24px 26px;
+  border: 1px solid var(--line-soft);
+}
+/* the grids of cards */
+.stage, .telemetry {
+  margin-block: 0 var(--sec-gap);
+  padding: 0;
+  gap: 16px;
+}
+.stage { padding-block-start: var(--sec-gap); }
+
+.credits {
+  margin-block: 0;
+  padding: 26px 0 44px;
+  border-block-start: 1px solid var(--line-soft);
+  max-width: none;
+  font-size: 0.78rem;
+}
+
+/* the chapter marker, floated into the gap above each band. Placed at the
+   inline end - the left, in Hebrew - because every heading starts at the
+   right and would collide with it there. */
+section[data-step] { position: relative; }
+section[data-step]::before {
+  content: attr(data-step) '  ·  ' attr(data-label);
+  position: absolute;
+  inset-block-start: -25px;
+  inset-inline-end: 2px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* one type scale, instead of five */
+.origins__head h2 { font-size: 1.62rem; font-weight: 800; letter-spacing: -0.022em; }
+.pane__head h2 { font-size: 1.02rem; }
+.circuit__head h3, .progress__text h3, .mind__intro h3, .eye__text h3,
+.model__text h3, .tel__head h3, .progress__chart h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.012em;
+}
+.origins__lead { font-size: 1rem; line-height: 1.62; }
+.progress__text p, .mind__intro p, .eye__text p, .model__text p {
+  font-size: 0.95rem;
+  line-height: 1.62;
+}
+.pane__sub, .circuit__note, .tel__note, .model__hint { font-size: 0.76rem; }
+
+/* the honesty notes were a wall of red, which reads as an error rather than as
+   the author telling you where the limits are. Same words, stated calmly. */
+.origins__note, .progress__honest, .eye__why, .model__cal {
+  background: var(--surface-2);
+  border-inline-start: 3px solid var(--primary-dim);
+  border-radius: var(--r-sm);
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* a top bar with room to breathe, and stats you can actually read */
+.topbar { padding-block: 14px; padding-inline: 0; }
+.topbar__inner { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.topbar__brand h1 { font-size: 1.15rem; }
+.stat { padding: 5px 11px; }
+.stat__label { font-size: 0.7rem; }
+.stat__value { font-size: 1.02rem; }
+
+@media (max-width: 900px) {
+  :root { --gutter: 16px; --sec-gap: 26px; }
+  .origins, .progress, .mind, .eye, .circuit, .model { padding: 18px 16px; }
+  section[data-step]::before { inset-block-start: -21px; font-size: 0.66rem; }
+}

@@ -52,6 +52,8 @@ export class VisionView {
     this.binR = new Float32Array(BINS);
     this.smoothL = new Float32Array(BINS);
     this.smoothR = new Float32Array(BINS);
+    /** Multiplies every drawn size. 1 on the page, more on the filming stage. */
+    this.zoom = 1;
     this.resize();
   }
 
@@ -59,15 +61,16 @@ export class VisionView {
     const r = this.canvas.getBoundingClientRect();
     this.w = Math.max(360, Math.round(r.width * this.dpr));
     this.h = Math.max(150, Math.round((r.height || 210) * this.dpr));
+    this.u = this.dpr * this.zoom;
     this.canvas.width = this.w;
     this.canvas.height = this.h;
   }
 
-  azToX(az) { return this.w / 2 + (az / HALF) * (this.w / 2 - 26 * this.dpr); }
+  azToX(az) { return this.w / 2 + (az / HALF) * (this.w / 2 - 26 * this.u); }
 
   draw(brain, game, handAz, out, dt) {
     const ctx = this.ctx;
-    const d = this.dpr;
+    const d = this.u;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#0a0808';
     ctx.fillRect(0, 0, this.w, this.h);
@@ -75,7 +78,7 @@ export class VisionView {
     const iconY = 34 * d;
     const axisY = 66 * d;
     const curveTop = 74 * d;
-    const curveBot = this.h - 40 * d;
+    const curveBot = this.h - 56 * d;
 
     this.bands(ctx, d, axisY, curveBot);
     this.objects(ctx, d, game, handAz, iconY);
@@ -158,14 +161,14 @@ export class VisionView {
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.setLineDash([3 * d, 4 * d]);
     ctx.beginPath();
-    ctx.moveTo(mid, y - 22 * d); ctx.lineTo(mid, bot);
+    ctx.moveTo(mid, y + 6 * d); ctx.lineTo(mid, bot);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.direction = 'rtl';
     ctx.textAlign = 'center';
     ctx.font = '500 ' + (9 * d).toFixed(0) + 'px Heebo, sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText('ישר קדימה', mid, y - 26 * d);
+    ctx.fillText('ישר קדימה', mid, y + 26 * d);
 
     for (const a of [-60, -30, 30, 60]) {
       const x = this.azToX(a);
@@ -225,8 +228,10 @@ export class VisionView {
     ctx.direction = 'rtl';
     ctx.textAlign = 'center';
     ctx.font = '600 ' + (9.5 * d).toFixed(0) + 'px Heebo, sans-serif';
-    ctx.fillStyle = 'rgba(179,165,149,0.55)';
-    ctx.fillText('פעילות LC10a לאורך שדה הראייה', this.w / 2, bot - H - 6 * d);
+    if (this.zoom === 1) {
+      ctx.fillStyle = 'rgba(179,165,149,0.55)';
+      ctx.fillText('פעילות LC10a לאורך שדה הראייה', this.w / 2, bot - H - 6 * d);
+    }
   }
 
   /** Looming pests show up in the field too - that is what LPLC2 answers to. */
@@ -255,7 +260,7 @@ export class VisionView {
 
   /** The decision the bump produces, stated in words. */
   verdict(ctx, d, out, game, handAz) {
-    const y = this.h - 20 * d;
+    const y = this.h - 12 * d;
     ctx.direction = 'rtl';
     ctx.textAlign = 'center';
     ctx.font = '700 ' + (12 * d).toFixed(0) + 'px Heebo, sans-serif';

@@ -16,12 +16,13 @@ import { mkdirSync, writeFileSync, rmSync, readdirSync, copyFileSync } from 'nod
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-const FFMPEG = 'C:/Users/eliha/AppData/Local/Microsoft/WinGet/Packages/'
-  + 'Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe/'
-  + 'ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe';
-const OUT = 'C:/Users/eliha/Videos/fly brain video/clips';
-const SCREENS = 'C:/Users/eliha/Videos/fly brain video/screens';
+// machine-specific; override with env vars rather than editing this file
+const CHROME = process.env.CHROME_BIN
+  || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg';
+const VIDEO_DIR = process.env.VIDEO_DIR || './video';
+const OUT = VIDEO_DIR + '/clips';
+const SCREENS = VIDEO_DIR + '/screens';
 const URL = process.env.CAP_URL || 'http://localhost:4173/';
 const PORT = 9333;
 const W = 1080, H = 1920;   // portrait, for phone
@@ -109,10 +110,15 @@ const CLIPS = [
     caption: 'המעגל הזה לא נבנה בשביל פלאפל. בטבע זה מה שזכר מפעיל כשהוא רודף אחרי נקבה.' },
   { id: '10', scene: 'escape',    seconds: 9, timeScale: 1,
     caption: 'והמעגל שנבנה כדי לברוח ממכת זבובים, הוא בדיוק זה שסוטר לזבוב.' },
+  { id: '11', site: true,         seconds: 17,
+    caption: 'בניתי אתר שאפשר לראות בו את כל התהליך בזמן אמת, מהמוח ועד המנה.' },
+  { id: '12', scene: 'scale',     seconds: 10, timeScale: 1,
+    caption: 'מוח של עכבר הוא חמש מאות מוחות של זבוב. מוח אנושי הוא שש מאות אלף.' },
+  { id: '13', scene: 'future',    seconds: 12, timeScale: 1,
+    caption: 'תרשים חשמלי מלא של מוח פותח דברים שלא היו אפשריים קודם.' },
+  { id: '14', scene: 'punch',     seconds: 8,
+    caption: 'בפעם הראשונה בהיסטוריה יש בידיים שלנו תרשים מלא של מוח שלם. הוא של זבוב.' },
 ];
-
-/** Hand the page over to us: stop its own loop, we drive every frame. */
-const TAKE_OVER = `window.S.driven = true; true;`;
 
 /* ----------------------------------------------------------------- main --- */
 
@@ -164,41 +170,56 @@ async function main() {
     { width: W, height: H, deviceScaleFactor: 1, mobile: false }, sessionId);
 
   for (const clip of clips) {
-    process.stdout.write('  ' + clip.id + ' ' + clip.scene.padEnd(12));
+    process.stdout.write('  ' + clip.id + ' ' + (clip.scene || 'site').padEnd(12));
     const frameDir = join(tmpdir(), 'fly-frames-' + clip.id);
     rmSync(frameDir, { recursive: true, force: true });
     mkdirSync(frameDir, { recursive: true });
 
-    await send('Page.navigate',
-      { url: URL + 'shoot.html?scene=' + clip.scene }, sessionId);
+    // the site clip films the real page; every other clip films the stage
+    const app = clip.site ? 'window.__fly' : 'window.S';
+    await send('Page.navigate', { url: clip.site
+      ? URL + '?tour=0'
+      : URL + 'shoot.html?scene=' + clip.scene }, sessionId);
 
     let ready = false;
-    for (let i = 0; i < 90 && !ready; i++) {
+    for (let i = 0; i < 120 && !ready; i++) {
       await sleep(250);
-      ready = await evaluate('!!(window.S && window.S.ready)', sessionId).catch(() => false);
+      ready = await evaluate(`!!(${app} && ${app}.tick)`, sessionId).catch(() => false);
     }
     if (!ready) throw new Error(clip.id + ': scene never booted');
-    await evaluate(TAKE_OVER, sessionId);
+    await evaluate(app + '.driven = true; true;', sessionId);
 
     // a still frame is a still frame; scenes that animate get eased in
     const dt = (1000 / FPS) * (clip.timeScale ?? TIME_SCALE);
-    await evaluate(`for (let i = 0; i < ${clip.warm ?? 120}; i++) window.S.tick(${dt}); true;`,
+    await evaluate(`for (let i = 0; i < ${clip.warm ?? 120}; i++) ${app}.tick(${dt}); true;`,
       sessionId);
 
     const total = Math.round(clip.seconds * FPS);
+    // a constant-rate scroll, with a beat of stillness at each end so the clip
+    // does not start or finish mid-move
+    const HOLD = 24;
+    const span = clip.site
+      ? await evaluate('document.documentElement.scrollHeight - window.innerHeight',
+        sessionId)
+      : 0;
     for (let frame = 0; frame < total; frame++) {
-      await evaluate(`window.S.tick(${dt}); true;`, sessionId);
+      if (clip.site) {
+        const k = Math.min(1, Math.max(0, (frame - HOLD) / (total - HOLD * 2)));
+        await evaluate(`window.scrollTo(0, ${Math.round(k * span)}); true;`, sessionId);
+      }
+      await evaluate(`${app}.tick(${dt}); true;`, sessionId);
       const shot = await send('Page.captureScreenshot',
         { format: 'png', captureBeyondViewport: false }, sessionId);
       writeFileSync(join(frameDir, String(frame).padStart(5, '0') + '.png'),
         Buffer.from(shot.data, 'base64'));
     }
 
+    const name = clip.id + '_' + (clip.scene || 'site');
     const still = readdirSync(frameDir).sort().at(Math.floor(total / 2));
-    copyFileSync(join(frameDir, still), join(SCREENS, clip.id + '_' + clip.scene + '.png'));
+    copyFileSync(join(frameDir, still), join(SCREENS, name + '.png'));
 
-    await encode(frameDir, join(OUT, clip.id + '_' + clip.scene + '.mp4'));
-    writeSrt(join(OUT, clip.id + '_' + clip.scene + '.srt'), clip);
+    await encode(frameDir, join(OUT, name + '.mp4'));
+    writeSrt(join(OUT, name + '.srt'), clip);
     rmSync(frameDir, { recursive: true, force: true });
     console.log('  ' + total + ' frames  ' + clip.seconds + 's');
   }

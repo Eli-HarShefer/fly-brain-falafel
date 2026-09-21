@@ -404,6 +404,64 @@ export class BrainView {
     this.cloudColorAttr.needsUpdate = true;
   }
 
+  /**
+   * The imaging sheet itself.
+   *
+   * Recolouring points alone reads as a gradient sliding across a cloud. A
+   * bright plane physically cutting through the volume reads as a machine
+   * sectioning a brain, which is what actually happened, and the bloom pass
+   * turns it into a sheet of light. Sized to the real extent of the cloud.
+   */
+  buildScanPlane() {
+    const p = this.cloud.geometry.getAttribute('position').array;
+    let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
+    for (let i = 0; i < this.cloudN; i++) {
+      const x = p[i * 3], y = p[i * 3 + 1];
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    const w = (x1 - x0) * 1.12, h = (y1 - y0) * 1.12;
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+
+    this.scanMat = new THREE.ShaderMaterial({
+      uniforms: { uA: { value: 1 } },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        varying vec2 vUv;
+        uniform float uA;
+        void main() {
+          vec2 q = vUv * 2.0 - 1.0;
+          // soft in the middle, with a hot rim so the section has an edge
+          float body = 1.0 - smoothstep(0.1, 1.0, length(q));
+          float rim = smoothstep(0.86, 1.0, max(abs(q.x), abs(q.y)));
+          float a = (body * 0.10 + rim * 1.15) * uA;
+          gl_FragColor = vec4(vec3(0.46, 0.80, 0.97) * a, a);
+        }`,
+    });
+    this.scanPlane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), this.scanMat);
+    this.scanPlane.position.set(cx, cy, 0);
+    this.scanPlane.visible = false;
+    this.scene.add(this.scanPlane);
+  }
+
+  /** @param z where to put the sheet, or null to hide it */
+  setScanPlane(z, alpha = 1) {
+    if (!this.scanPlane) this.buildScanPlane();
+    if (z === null) { this.scanPlane.visible = false; return; }
+    this.scanPlane.visible = true;
+    this.scanPlane.position.z = z;
+    this.scanMat.uniforms.uA.value = alpha;
+  }
+
   /** Bounds of the cloud along the scan axis, for driving setScan. */
   scanRange() {
     let lo = 9, hi = -9;

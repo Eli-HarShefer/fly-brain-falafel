@@ -3,3 +3,4 @@ data/raw/
 dist/
 __pycache__/
 *.pyc
+video/

@@ -20,6 +20,7 @@
 </div>
 
 <header class="topbar">
+  <div class="topbar__inner">
   <div class="topbar__brand">
     <span class="topbar__dot" aria-hidden="true"></span>
     <h1>זבוב משחק מלך הפלאפל</h1>
@@ -35,6 +36,7 @@
     <button class="btn" id="btn-help" type="button" aria-label="מה קורה פה">?</button>
     <button class="btn" id="btn-pause" type="button" aria-pressed="false">השהה</button>
     <button class="btn btn--primary" id="btn-restart" type="button">התחל מחדש</button>
+  </div>
   </div>
 </header>
 
@@ -65,7 +67,7 @@
   </div>
 </div>
 
-<main class="stage">
+<main class="stage" data-step="01" data-label="הזבוב עובד">
   <section class="pane pane--game" aria-label="דוכן הפלאפל">
     <div class="pane__head">
       <h2>הדוכן</h2>
@@ -99,7 +101,7 @@
   </section>
 </main>
 
-<section class="origins" aria-label="למה זה בכלל עובד">
+<section class="origins" data-step="02" data-label="למה זה עובד" aria-label="למה זה בכלל עובד">
   <div class="origins__head">
     <h2>למה זה בכלל עובד</h2>
     <p class="origins__lead">
@@ -157,7 +159,7 @@
 
 <p id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
 
-<section class="progress" aria-label="איך הוא מתקדם">
+<section class="progress" data-step="03" data-label="האם הוא לומד" aria-label="איך הוא מתקדם">
   <div class="progress__chart">
     <div class="circuit__head">
       <h3>איך הוא מתקדם</h3>
@@ -185,7 +187,7 @@
   </div>
 </section>
 
-<section class="mind" aria-label="מה הזבוב חושב שקורה">
+<section class="mind" data-step="04" data-label="מה הוא חושב" aria-label="מה הזבוב חושב שקורה">
   <div class="mind__intro">
     <h3>מה הוא חושב שקורה</h3>
     <p>
@@ -214,7 +216,7 @@
   </div>
 </section>
 
-<section class="eye" aria-label="נקודת המבט של הזבוב">
+<section class="eye" data-step="05" data-label="מה הוא רואה" aria-label="נקודת המבט של הזבוב">
   <div class="eye__scope">
     <div class="circuit__head">
       <h3>מה הזבוב באמת רואה</h3>
@@ -243,7 +245,7 @@
   </div>
 </section>
 
-<section class="circuit vision-sec" aria-label="שדה הראייה של הזבוב">
+<section class="circuit vision-sec" data-step="06" data-label="שדה הראייה" aria-label="שדה הראייה של הזבוב">
   <div class="circuit__head">
     <h3>מה הזבוב רואה</h3>
     <p class="pane__sub">מה שהמוח מקבל · הגבעה היא איפה שהוא חושב שהמטרה נמצאת</p>
@@ -253,7 +255,7 @@
     aria-label="שדה הראייה של הזבוב: פעילות LC10a לאורך האזימוט, עין שמאל ועין ימין"></canvas>
 </section>
 
-<section class="circuit" aria-label="תרשים המעגל">
+<section class="circuit" data-step="07" data-label="המסלול העצבי" aria-label="תרשים המעגל">
   <div class="circuit__head">
     <h3>המסלול</h3>
     <p class="pane__sub">הדרך מהעין עד השריר · קו עבה = יותר חיבורים · כחול דוחף, אדום בולם</p>
@@ -263,7 +265,7 @@
     aria-label="תרשים חי של מעגל המרדף: LC10a אל AOTU אל DNa02, ו-LPLC2 אל DNp01"></canvas>
 </section>
 
-<section class="model" aria-label="איך המודל עובד">
+<section class="model" data-step="08" data-label="איך המודל בנוי" aria-label="איך המודל עובד">
   <div class="model__text">
     <h3>איך בנוי המוח הזה</h3>
     <p>
@@ -293,7 +295,7 @@
 </section>
 
 
-<section class="telemetry" aria-label="פעילות עצבית">
+<section class="telemetry" data-step="09" data-label="לשחק עם המוח" aria-label="פעילות עצבית">
   <div class="tel tel--raster">
     <div class="tel__head"><h3>ספייקים</h3><span class="tel__note" id="raster-note">—</span></div>
     <canvas id="raster" height="150" role="img" aria-label="ראסטר ספייקים לפי קבוצת נוירונים"></canvas>

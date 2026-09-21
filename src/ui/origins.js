@@ -28,18 +28,19 @@ function arrow(ctx, x, y, h) {
 }
 
 /** Dashed pursuit line with an arrowhead, the shared visual idiom here. */
-function chase(ctx, x1, y1, x2, y2, color) {
+function chase(ctx, x1, y1, x2, y2, color, s = 1) {
   ctx.strokeStyle = color;
-  ctx.lineWidth = 1.8;
-  ctx.setLineDash([5, 5]);
+  ctx.lineWidth = 1.8 * s;
+  ctx.setLineDash([5 * s, 5 * s]);
   ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
   ctx.setLineDash([]);
   const a = Math.atan2(y2 - y1, x2 - x1);
+  const head = 9 * s;
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(x2, y2);
-  ctx.lineTo(x2 - Math.cos(a - 0.4) * 9, y2 - Math.sin(a - 0.4) * 9);
-  ctx.lineTo(x2 - Math.cos(a + 0.4) * 9, y2 - Math.sin(a + 0.4) * 9);
+  ctx.lineTo(x2 - Math.cos(a - 0.4) * head, y2 - Math.sin(a - 0.4) * head);
+  ctx.lineTo(x2 - Math.cos(a + 0.4) * head, y2 - Math.sin(a + 0.4) * head);
   ctx.closePath(); ctx.fill();
 }
 
@@ -137,6 +138,96 @@ export const SCENES = {
     ctx.font = '600 12px Heebo, sans-serif';
     ctx.fillStyle = 'rgba(179,165,149,0.8)';
     ctx.fillText('רץ, אבל לא צריך אותו', mid / 2, h - 10);
+  },
+};
+
+/* ------------------------------------------------------- portrait version --- */
+
+/**
+ * The same two illustrations, stacked instead of side by side.
+ *
+ * On the page they sit in a wide strip and read left-to-right. In a 9:16 frame
+ * there is no width to spare and plenty of height, so the filming stage stacks
+ * them: nature on top, the falafel stand underneath, same wiring both times.
+ * Drawn in CSS pixels at whatever size the frame is, with type sized for a
+ * phone rather than for a panel.
+ */
+
+function band(ctx, w, y0, hh, side, sideColor, caption) {
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'right';
+  ctx.font = '800 44px Heebo, sans-serif';
+  ctx.fillStyle = sideColor;
+  ctx.fillText(side, w - 30, y0 + 60);
+
+  ctx.textAlign = 'center';
+  ctx.font = '700 38px Heebo, sans-serif';
+  ctx.fillStyle = 'rgba(247,242,234,0.9)';
+  ctx.fillText(caption, w / 2, y0 + hh - 30);
+}
+
+function divider(ctx, w, y) {
+  ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 10]);
+  ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(w - 40, y); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+export const STACKED = {
+  courtship(ctx, w, h) {
+    const hh = h / 2;
+    divider(ctx, w, hh);
+
+    // in nature: a male locks onto a female and will not let go
+    let cy = hh * 0.56;
+    FLY(ctx, w * 0.68, cy + 16, 2.6, { wild: true });
+    FLY(ctx, w * 0.34, cy - 10, 2.2, { wild: true });
+    chase(ctx, w * 0.60, cy + 2, w * 0.42, cy - 4, 'rgba(134,217,236,0.85)', 3);
+    band(ctx, w, 0, hh, 'בטבע', 'rgba(134,217,236,0.95)', 'הזכר ננעל על הנקבה ולא מרפה ממנה');
+
+    // here: the same lock, onto a tray
+    cy = hh + hh * 0.56;
+    FLY(ctx, w * 0.68, cy + 16, 2.6);
+    ctx.save();
+    ctx.translate(w * 0.34, cy - 6);
+    ctx.scale(2.2, 2.2);
+    rr(ctx, -30, -16, 60, 32, 6);
+    ctx.fillStyle = '#4a4e53'; ctx.fill();
+    FOOD.hummus(ctx, 0, 0, 0.9);
+    ctx.restore();
+    chase(ctx, w * 0.60, cy + 2, w * 0.43, cy - 4, 'rgba(245,204,114,0.9)', 3);
+    band(ctx, w, hh, hh, 'אצלנו', 'rgba(245,204,114,0.95)', 'אותה נעילה בדיוק, על מגש החומוס');
+  },
+
+  escape(ctx, w, h) {
+    const hh = h / 2;
+    divider(ctx, w, hh);
+
+    // in nature: something big closing in fast
+    let cy = hh * 0.56;
+    ctx.save();
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = 'rgba(224,85,63,' + (0.7 - i * 0.15) + ')';
+      ctx.lineWidth = 4;
+      circle(ctx, w * 0.30, cy, 34 + i * 26);
+      ctx.stroke();
+    }
+    ctx.restore();
+    FLY(ctx, w * 0.70, cy + 14, 2.5, { lunge: 0.55, wild: true });
+    chase(ctx, w * 0.44, cy - 2, w * 0.61, cy + 6, 'rgba(178,138,232,0.85)', 3);
+    band(ctx, w, 0, hh, 'בטבע', 'rgba(178,138,232,0.95)', 'צל שגדל מהר מול העיניים, והזבוב בורח');
+
+    // here: the same trigger, aimed outward
+    cy = hh + hh * 0.56;
+    FLY(ctx, w * 0.68, cy + 14, 2.6, { lunge: 0.5 });
+    ctx.save();
+    ctx.translate(w * 0.33, cy - 6);
+    ctx.scale(2.1, 2.1);
+    drawPest(ctx, 0, 0, 0.95, 1.2, false);
+    ctx.restore();
+    chase(ctx, w * 0.59, cy + 2, w * 0.41, cy - 4, 'rgba(178,138,232,0.9)', 3);
+    band(ctx, w, hh, hh, 'אצלנו', 'rgba(245,204,114,0.95)', 'אותו רפלקס בדיוק, והזבוב סוטר');
   },
 };
 

@@ -25,6 +25,9 @@ import { paintOrigins } from './ui/origins.js';
 import { STATIONS } from './game/orders.js';
 import { FOOD } from './game/art.js';
 
+/** Where the connectome files sit, relative to wherever the page is mounted. */
+const DATA = import.meta.env.BASE_URL + 'data/';
+
 const $ = (id) => document.getElementById(id);
 const bootStatus = $('boot-status');
 const setStatus = (s) => { bootStatus.textContent = s; };
@@ -38,9 +41,9 @@ async function loadBinary(url, label) {
 
 async function main() {
   const [circuitBuf, metaRes, cloudBuf] = await Promise.all([
-    loadBinary('/data/circuit.bin', 'מוריד את המעגל…'),
-    fetch('/data/circuit.json').then((r) => r.json()),
-    loadBinary('/data/cloud.bin', 'מוריד 139,255 נוירונים…'),
+    loadBinary(DATA + 'circuit.bin', 'מוריד את המעגל…'),
+    fetch(DATA + 'circuit.json').then((r) => r.json()),
+    loadBinary(DATA + 'cloud.bin', 'מוריד 139,255 נוירונים…'),
   ]);
 
   setStatus('בונה את הרשת…');
@@ -175,8 +178,11 @@ async function main() {
   // --- first-run explainer --------------------------------------------------
   const intro = $('intro');
   const SEEN = 'fly-falafel:intro-seen';
-  let seen = false;
-  try { seen = localStorage.getItem(SEEN) === '1'; } catch { /* private mode */ }
+  // ?tour=0 skips it outright, which is what the capture rig uses: a modal
+  // over the hero is the right call for a first visit and the wrong one for a
+  // scroll-through of the finished page
+  let seen = new URLSearchParams(location.search).get('tour') === '0';
+  try { seen = seen || localStorage.getItem(SEEN) === '1'; } catch { /* private mode */ }
   const openIntro = () => { intro.hidden = false; $('intro-close').focus(); };
   const closeIntro = () => {
     intro.hidden = true;
@@ -323,7 +329,8 @@ async function main() {
     requestAnimationFrame(frame);
     const dtMs = now - last;
     last = now;
-    tick(dtMs);
+    // the capture rig sets driven and calls tick() itself, one frame at a time
+    if (!window.__fly.driven) tick(dtMs);
   }
   requestAnimationFrame(frame);
 }
