@@ -10,10 +10,10 @@
 
 /** [clip file stem, seconds] in timeline order. */
 export const TIMELINE = [
-  ['01_live', 12], ['02_slicing', 12], ['03_slice', 10], ['04_effort', 13],
-  ['05_quote_murthy', 7], ['06_quad', 10], ['07_stand', 10], ['08_both', 11],
-  ['09_vision', 10], ['10_pathway', 12], ['11_instincts', 12], ['12_site', 17],
-  ['13_scale', 11], ['14_future', 13], ['15_punch', 8],
+  ['01_live', 12], ['02_slicing', 12], ['03_slice', 10], ['04_quad', 10],
+  ['05_stand', 10], ['06_both', 11], ['07_vision', 10], ['08_pathway', 12],
+  ['09_instincts', 12], ['10_site', 17], ['11_scale', 11], ['12_future', 13],
+  ['13_punch', 8],
 ];
 
 /** Start time of each clip, keyed by its two-digit number. */
@@ -37,7 +37,7 @@ export const AT = (() => {
  * because a film that simply stops feels broken rather than finished. Nothing
  * else. Override the choice with SFX_WHOOSH to audition another.
  */
-export const TRANSITION = process.env.SFX_WHOOSH || 'whoosh';
+export const TRANSITION = process.env.SFX_WHOOSH || 'swish';
 
 /** How far before the cut the air starts moving. */
 const LEAD = 0.22;
@@ -48,5 +48,5 @@ export const CUES = [
     at: AT[name.slice(0, 2)] - LEAD,
     gain: 0.75,
   })),
-  { file: 'sub_drop', at: AT['15'] + 0.05, gain: 0.85 },
+  { file: 'sub_drop', at: AT['13'] + 0.05, gain: 0.85 },
 ];

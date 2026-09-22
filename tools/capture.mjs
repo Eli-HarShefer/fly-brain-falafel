@@ -90,8 +90,6 @@ async function evaluate(expr, session, awaitPromise = true) {
  * `perFrame` runs before each capture, for anything that needs to change.
  */
 const CLIPS = [
-  // 01 is the live panel of the four-up opener; tools/research.mjs then fills
-  // the other three holes with the licensed research footage
   // warm hard: the opener has to be mid-action on its very first frame, which
   // is also the thumbnail. A cold start shows an empty stand and a quiet brain.
   { id: '01', scene: 'live',         seconds: 12, warm: 900,
@@ -100,30 +98,26 @@ const CLIPS = [
     caption: 'וככה מיפו אותו. חתכו מוח לאלפי פרוסות וצילמו כל אחת במיקרוסקופ אלקטרונים.' },
   { id: '03', scene: 'slice',        seconds: 10, timeScale: 1, warm: 0,
     caption: 'זאת תמונה אמיתית מהמחקר. כל עיגול קטן פה הוא חתך של סיב עצבי אחד.' },
-  { id: '04', scene: 'effort',       seconds: 13, timeScale: 1,
-    caption: 'מוח אחד יצא 21 מיליון תמונות. גוגל בנתה רשת נוירונים שעקבה אחרי כל סיב לבד.' },
-  { id: '05', scene: 'quote_murthy', seconds: 7, timeScale: 1,
-    caption: 'מאלה מרתי מפרינסטון: אין שום קונקטום מלא אחר של מוח, לשום חיה בוגרת במורכבות הזאת.' },
-  // 06 is the live panel of the research four-up; research.mjs fills the rest
-  { id: '06', scene: 'quad',         seconds: 10, timeScale: 1, warm: 400,
+  // 04 is the live panel of the research four-up; research.mjs fills the rest
+  { id: '04', scene: 'quad',         seconds: 10, timeScale: 1, warm: 400,
     caption: 'מתוך המפה הזאת לקחתי מעגל אחד. שלושת החלונות האחרים הם מהמחקר עצמו.' },
-  { id: '07', scene: 'stand',        seconds: 10,
+  { id: '05', scene: 'stand',        seconds: 10,
     caption: 'ואז נתתי לו דוכן פלאפל. אף אחד לא לימד אותו לשחק.' },
-  { id: '08', scene: 'both',         seconds: 11,
+  { id: '06', scene: 'both',         seconds: 11,
     caption: 'אותו רגע בדיוק, פעם מהצד שלנו ופעם מהצד שלו.' },
-  { id: '09', scene: 'vision',       seconds: 10,
+  { id: '07', scene: 'vision',       seconds: 10,
     caption: 'המוח שלו מקבל מספר אחד: כמה מעלות המטרה ימינה או שמאלה. זו כל האינפורמציה.' },
-  { id: '10', scene: 'pathway',      seconds: 12,
+  { id: '08', scene: 'pathway',      seconds: 12,
     caption: 'שני נוירונים מושכים את אותה פקודת סיבוב לכיוונים הפוכים. ההפרש ביניהם הוא הפנייה.' },
-  { id: '11', scene: 'instincts',    seconds: 12, timeScale: 1,
+  { id: '09', scene: 'instincts',    seconds: 12, timeScale: 1,
     caption: 'שני המעגלים האלה לא נבנו לפלאפל. אחד רודף אחרי נקבה, השני בורח ממכה.' },
-  { id: '12', site: true,            seconds: 17,
+  { id: '10', site: true,            seconds: 17,
     caption: 'בניתי אתר שאפשר לראות בו את כל התהליך בזמן אמת, מהמוח ועד המנה.' },
-  { id: '13', scene: 'scale',        seconds: 11, timeScale: 1,
+  { id: '11', scene: 'scale',        seconds: 11, timeScale: 1,
     caption: 'מוח של עכבר הוא חמש מאות מוחות של זבוב. מוח אנושי הוא שש מאות אלף.' },
-  { id: '14', scene: 'future',       seconds: 13, timeScale: 1,
+  { id: '12', scene: 'future',       seconds: 13,
     caption: 'תרשים חשמלי מלא של מוח פותח דברים שלא היו אפשריים קודם.' },
-  { id: '15', scene: 'punch',        seconds: 8,
+  { id: '13', scene: 'punch',        seconds: 8,
     caption: 'בפעם הראשונה בהיסטוריה יש בידיים שלנו תרשים מלא של מוח שלם. הוא של זבוב.' },
 ];
 

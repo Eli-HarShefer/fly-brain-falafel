@@ -19,6 +19,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { TIMELINE as CLIPS, CUES } from './edl.mjs';
 import { zipStore } from './zipstore.mjs';
@@ -194,6 +195,15 @@ print(json.dumps(out))
     }
   }
 
+  /** Content hash, cached so the same file is not read twice. */
+  const md5cache = new Map();
+  function md5(path) {
+    if (md5cache.has(path)) return md5cache.get(path);
+    const h = createHash('md5').update(readFileSync(path)).digest('hex');
+    md5cache.set(path, h);
+    return h;
+  }
+
   /** Length straight out of the WAV header; no probe process needed. */
   function wavSeconds(p) {
     const b = readFileSync(p);
@@ -292,7 +302,10 @@ for tr in d["timelineInfos"][0]["trackInfos"]:
     item.import_time = now;
     item.media_type = kind === 'image' ? 16 : 2;
     item.media_length = kind === 'image' ? 50000000 : (r.mediaLength || 50000000);
-    delete item.src_md5;
+    // Filmora keys imported media on a content hash. Without it the file is in
+    // the project but never appears in Project Media, which is how the first
+    // build came out: a full timeline over an empty bin.
+    item.src_md5 = md5(path);
     mediaItems[id] = item;
 
     const mTpl = kind === 'image' ? imgMediaTpl : vidMediaTpl;

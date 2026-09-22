@@ -91,39 +91,50 @@ const USES = [
 ];
 
 export function drawFuture(ctx, w, h) {
-  const gap = 22, lh = 40, px = 32;
-  const pad = 30;
-  ctx.font = '600 ' + px + 'px Heebo, sans-serif';
-  const cards = USES.map(([head, body]) => {
-    const lines = wrapLines(ctx, body, w - 76);
-    return { head, lines, h: 92 + lines.length * lh + pad };
-  });
-  const total = cards.reduce((a, c) => a + c.h, 0) + gap * (cards.length - 1);
-  let y = Math.max(0, (h - total) / 2);
+  // Lay the cards out at full size, then, if the panel is shorter than they
+  // need, shrink everything by the shortfall rather than letting the last one
+  // run off the bottom.
+  const measure = (k) => {
+    const gap = 22 * k, lh = 40 * k, px = 32 * k, pad = 30 * k;
+    ctx.font = '600 ' + px.toFixed(1) + 'px Heebo, sans-serif';
+    const cards = USES.map(([head, body]) => {
+      const lines = wrapLines(ctx, body, w - 76 * k);
+      return { head, lines, h: 92 * k + lines.length * lh + pad };
+    });
+    const total = cards.reduce((a, c) => a + c.h, 0) + gap * (cards.length - 1);
+    return { cards, total, gap, lh, px };
+  };
 
-  cards.forEach((c, i) => {
+  let k = 1;
+  let m = measure(k);
+  if (m.total > h) {
+    k = Math.max(0.6, h / m.total);
+    m = measure(k);
+  }
+
+  let y = Math.max(0, (h - m.total) / 2);
+  m.cards.forEach((c, i) => {
     ctx.beginPath();
-    ctx.roundRect(0, y, w, c.h, 22);
+    ctx.roundRect(0, y, w, c.h, 22 * k);
     ctx.fillStyle = 'rgba(255,255,255,0.04)';
     ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.09)';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // a numbered dot so the three read as a list, not a wall
     ctx.beginPath();
-    ctx.arc(w - 48, y + 50, 23, 0, Math.PI * 2);
+    ctx.arc(w - 48 * k, y + 50 * k, 23 * k, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(245,204,114,0.16)';
     ctx.fill();
-    text(ctx, w - 48, y + 62, String(i + 1), 28, WARN, 800, 'center');
+    text(ctx, w - 48 * k, y + 62 * k, String(i + 1), 28 * k, WARN, 800, 'center');
 
-    text(ctx, w - 90, y + 62, c.head, 38, INK, 800);
+    text(ctx, w - 90 * k, y + 62 * k, c.head, 38 * k, INK, 800);
     ctx.direction = 'rtl';
     ctx.textAlign = 'right';
-    ctx.font = '600 ' + px + 'px Heebo, sans-serif';
+    ctx.font = '600 ' + m.px.toFixed(1) + 'px Heebo, sans-serif';
     ctx.fillStyle = MUTED;
-    c.lines.forEach((ln, k) => ctx.fillText(ln, w - 32, y + 112 + k * lh));
-    y += c.h + gap;
+    c.lines.forEach((ln, j) => ctx.fillText(ln, w - 32 * k, y + 112 * k + j * m.lh));
+    y += c.h + m.gap;
   });
 }
 

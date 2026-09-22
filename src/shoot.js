@@ -308,8 +308,20 @@ const SCENES = {
   future: {
     title: 'ולמה זה משנה',
     sub: 'תרשים חשמלי מלא של מוח פותח שלושה דברים שלא היו אפשריים קודם',
-    note: 'הזבוב הזה הוא <em>הוכחת היתכנות</em>. אותה שיטה בדיוק רצה עכשיו על מוחות גדולים יותר.',
-    frames: [{ kind: 'still', paint: drawFuture }],
+    note: 'הזבוב הזה הוא <em>הוכחת היתכנות</em>. אותה שיטה רצה עכשיו על מוחות גדולים יותר.',
+    layout: 'stack',
+    frames: [
+      { kind: 'brain', tag: 'המעגל, חי' },
+      { kind: 'still', paint: drawFuture },
+    ],
+    setup: (c) => {
+      c.view.setCloudVisible(true);
+      c.view.setEdgesVisible(true);
+      c.view.controls.autoRotate = true;
+      c.view.controls.autoRotateSpeed = 1.6;
+      c.view.camera.position.set(0.02, 0.2, 1.62).add(c.view.center);
+      c.view.controls.update();
+    },
   },
 
   punch: {
