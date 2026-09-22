@@ -147,7 +147,8 @@ async function main() {
   for (const reel of reels) {
     process.stdout.write('  ' + reel.id + ' ' + reel.scene.padEnd(16));
     await send('Page.navigate',
-      { url: URL + 'shoot.html?scene=' + reel.scene }, sessionId);
+      { url: URL + 'shoot.html?scene=' + reel.scene + (process.env.NOCAP ? '&nocap=1' : '') },
+      sessionId);
 
     let ready = false;
     for (let i = 0; i < 90 && !ready; i++) {

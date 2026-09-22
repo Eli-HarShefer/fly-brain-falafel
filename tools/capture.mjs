@@ -195,7 +195,8 @@ async function main() {
     const app = clip.site ? 'window.__fly' : 'window.S';
     await send('Page.navigate', { url: clip.site
       ? URL + '?tour=0'
-      : URL + 'shoot.html?scene=' + clip.scene }, sessionId);
+      : URL + 'shoot.html?scene=' + clip.scene + (process.env.NOCAP ? '&nocap=1' : '') },
+      sessionId);
 
     let ready = false;
     for (let i = 0; i < 120 && !ready; i++) {

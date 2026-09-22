@@ -153,6 +153,11 @@
   text-align: center;
 }
 
+/* caption mode: the foot is empty, so give the height to the visual and leave
+   the bottom clear for the timed caption images */
+.no-note .stage9 { padding-block-end: 470px; }
+.no-note .s-head .s-credit { margin-block-start: 4px; text-align: start; }
+
 /* ---------- safe-area guides (?safe=1) ---------- */
 .safe[hidden] { display: none; }
 .safe { position: fixed; inset: 0; pointer-events: none; z-index: 99; }

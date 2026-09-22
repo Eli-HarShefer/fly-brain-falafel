@@ -321,8 +321,16 @@ async function main() {
 
   $('s-title').innerHTML = scene.title;
   $('s-sub').innerHTML = scene.sub || '';
-  $('s-note').innerHTML = scene.note || '';
-  if (scene.credit) $('s-credit').textContent = scene.credit;
+  // ?nocap=1 drops the caption line and lifts the credit into the header: the
+  // note and the narration say the same thing, so when a timed caption track
+  // carries the narration the note is just a second copy sitting in its way
+  const noNote = params.get('nocap') === '1';
+  $('s-note').innerHTML = noNote ? '' : (scene.note || '');
+  if (noNote) document.body.classList.add('no-note');
+  if (scene.credit) {
+    $('s-credit').textContent = scene.credit;
+    if (noNote) $('s-head').appendChild($('s-credit'));
+  }
 
   const [circuitBuf, meta, cloudBuf] = await Promise.all([
     fetch(DATA + 'circuit.bin').then((r) => r.arrayBuffer()),

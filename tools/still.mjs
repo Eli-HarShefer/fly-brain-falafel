@@ -94,7 +94,7 @@ async function main() {
     { width: W, height: H, deviceScaleFactor: 1, mobile: false }, sessionId);
 
   for (const scene of scenes) {
-    await send('Page.navigate', { url: URL + 'shoot.html?scene=' + scene }, sessionId);
+    await send('Page.navigate', { url: URL + 'shoot.html?scene=' + scene + (process.env.NOCAP ? '&nocap=1' : '') }, sessionId);
     let ready = false;
     for (let i = 0; i < 90 && !ready; i++) {
       await sleep(250);

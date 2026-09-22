@@ -20,86 +20,13 @@ import { spawn } from 'node:child_process';
 import { writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { TIMELINE, AT as at, CUES } from './edl.mjs';
 
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg';
 const VIDEO_DIR = process.env.VIDEO_DIR || './video';
 const CLIPS = VIDEO_DIR + '/clips';
 const SFX = VIDEO_DIR + '/sfx';
 const OUT = VIDEO_DIR + '/PREVIEW.mp4';
-
-/** In order, with the length each one contributes to the timeline. */
-const TIMELINE = [
-  ['01_quad', 12], ['02_slicing', 12], ['03_slice', 10], ['04_effort', 13],
-  ['05_quote_murthy', 7], ['06_circuit', 8], ['07_stand', 10], ['08_both', 11],
-  ['09_vision', 10], ['10_pathway', 12], ['11_instincts', 12], ['12_site', 17],
-  ['13_scale', 11], ['14_future', 13], ['15_punch', 8],
-];
-
-/** Start time of each clip, derived so the cue list below stays readable. */
-const at = {};
-{
-  let t = 0;
-  for (const [name, len] of TIMELINE) { at[name.slice(0, 2)] = t; t += len; }
-  at.end = t;
-}
-
-/**
- * Every sound cue: [file, when, gain].
- *
- * Transition cues land slightly *before* the cut they cover, because a whoosh
- * that starts on the frame of the cut reads as late - the ear wants the air to
- * be already moving when the picture changes.
- */
-const CUES = [
-  // the opener: labels arriving
-  ['click', at['01'] + 0.35, 0.5],
-  ['click', at['01'] + 0.7, 0.45],
-  ['click', at['01'] + 1.05, 0.45],
-  ['click', at['01'] + 1.4, 0.4],
-
-  ['whoosh', at['02'] - 0.25, 0.8],
-  ['swish', at['03'] - 0.2, 0.75],
-
-  ['boom_tiktok', at['04'] - 0.15, 0.7],
-  ['click', at['04'] + 1.6, 0.5],
-  ['click', at['04'] + 5.2, 0.5],
-  ['click', at['04'] + 8.8, 0.5],
-
-  ['shutter', at['05'] + 0.35, 0.6],
-
-  ['whoosh', at['06'] - 0.25, 0.75],
-  ['swish', at['07'] - 0.2, 0.7],
-
-  // the fly grabbing a tray, three times through the clip
-  ['pop', at['07'] + 2.4, 0.5],
-  ['pop', at['07'] + 5.1, 0.5],
-  ['pop', at['07'] + 7.8, 0.5],
-
-  ['whoosh', at['08'] - 0.25, 0.75],
-  ['boom_tiktok', at['09'] - 0.15, 0.7],
-  ['click', at['09'] + 0.6, 0.5],
-  // no cue into 10: it is the same argument continuing
-
-  ['shutter', at['11'] - 0.15, 0.7],
-  ['pop', at['11'] + 0.5, 0.5],
-  ['pop', at['11'] + 1.0, 0.5],
-  ['pop', at['11'] + 1.5, 0.5],
-  ['pop', at['11'] + 2.0, 0.5],
-
-  ['whoosh', at['12'] - 0.25, 0.75],
-
-  ['boom', at['13'], 0.8],
-  ['pop', at['13'] + 0.5, 0.6],
-
-  ['swish', at['14'] - 0.2, 0.7],
-  ['click', at['14'] + 1.2, 0.5],
-  ['click', at['14'] + 4.8, 0.5],
-  ['click', at['14'] + 8.4, 0.5],
-
-  // the whole ending hangs on these two
-  ['riser', at['15'] - 3.6, 0.85],
-  ['sub_drop', at['15'] + 0.1, 0.9],
-];
 
 function run(args) {
   return new Promise((res, rej) => {
@@ -113,8 +40,8 @@ async function main() {
     const f = join(CLIPS, name + '.mp4');
     if (!existsSync(f)) throw new Error('missing clip: ' + f);
   }
-  for (const [name] of CUES) {
-    const f = join(SFX, name + '.wav');
+  for (const { file } of CUES) {
+    const f = join(SFX, file + '.wav');
     if (!existsSync(f)) throw new Error('missing sound: ' + f);
   }
 
@@ -131,9 +58,9 @@ async function main() {
   // 2. the sound: every cue delayed to its mark, summed, then laid under
   console.log('placing ' + CUES.length + ' sound cues');
   const args = ['-y', '-hide_banner', '-loglevel', 'error', '-i', silent];
-  for (const [name] of CUES) args.push('-i', join(SFX, name + '.wav'));
+  for (const { file } of CUES) args.push('-i', join(SFX, file + '.wav'));
 
-  const parts = CUES.map(([, when, gain], i) => {
+  const parts = CUES.map(({ at: when, gain }, i) => {
     const ms = Math.max(0, Math.round(when * 1000));
     return `[${i + 1}:a]adelay=${ms}|${ms},volume=${gain}[c${i}]`;
   });
