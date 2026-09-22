@@ -21,6 +21,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { TIMELINE as CLIPS, CUES } from './edl.mjs';
+import { zipStore } from './zipstore.mjs';
 
 const VIDEO_DIR = resolve(process.env.VIDEO_DIR || './video');
 const TEMPLATE = process.env.WFP_TEMPLATE
@@ -33,76 +34,6 @@ const OUT = join(OUT_DIR, PROJECT_NAME + '.wfp');
 const T = 1e7;
 /** Stills sit at a large source offset in the template; keep that convention. */
 const STILL_BASE = 36000000000;
-
-/* ------------------------------------------------------------------- zip --- */
-
-/** Minimal store-only zip writer; Filmora's own archives use method=store. */
-function zipStore(entries) {
-  const chunks = [];
-  const central = [];
-  let offset = 0;
-  const crcTable = (() => {
-    const t = new Int32Array(256);
-    for (let n = 0; n < 256; n++) {
-      let c = n;
-      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-      t[n] = c;
-    }
-    return t;
-  })();
-  const crc32 = (buf) => {
-    let c = -1;
-    for (let i = 0; i < buf.length; i++) c = crcTable[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
-    return (c ^ -1) >>> 0;
-  };
-
-  for (const [name, data] of entries) {
-    const nameBuf = Buffer.from(name, 'utf8');
-    const crc = crc32(data);
-    const local = Buffer.alloc(30);
-    local.writeUInt32LE(0x04034b50, 0);
-    local.writeUInt16LE(10, 4);
-    local.writeUInt16LE(0x0800, 6);       // UTF-8 names
-    local.writeUInt16LE(0, 8);            // store
-    local.writeUInt16LE(0, 10);
-    local.writeUInt16LE(0, 12);
-    local.writeUInt32LE(crc, 14);
-    local.writeUInt32LE(data.length, 18);
-    local.writeUInt32LE(data.length, 22);
-    local.writeUInt16LE(nameBuf.length, 26);
-    local.writeUInt16LE(0, 28);
-    chunks.push(local, nameBuf, data);
-
-    const cen = Buffer.alloc(46);
-    cen.writeUInt32LE(0x02014b50, 0);
-    cen.writeUInt16LE(0x031e, 4);
-    cen.writeUInt16LE(10, 6);
-    cen.writeUInt16LE(0x0800, 8);
-    cen.writeUInt16LE(0, 10);
-    cen.writeUInt16LE(0, 12);
-    cen.writeUInt16LE(0, 14);
-    cen.writeUInt32LE(crc, 16);
-    cen.writeUInt32LE(data.length, 20);
-    cen.writeUInt32LE(data.length, 24);
-    cen.writeUInt16LE(nameBuf.length, 28);
-    cen.writeUInt16LE(0, 30);
-    cen.writeUInt16LE(0, 32);
-    cen.writeUInt16LE(0, 34);
-    cen.writeUInt16LE(0, 36);
-    cen.writeUInt32LE(0, 38);
-    cen.writeUInt32LE(offset, 42);
-    central.push(cen, nameBuf);
-    offset += local.length + nameBuf.length + data.length;
-  }
-  const cenBuf = Buffer.concat(central);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(entries.length, 8);
-  end.writeUInt16LE(entries.length, 10);
-  end.writeUInt32LE(cenBuf.length, 12);
-  end.writeUInt32LE(offset, 16);
-  return Buffer.concat([...chunks, cenBuf, end]);
-}
 
 /** Read the template zip with the system unzip via python, which is present. */
 function readTemplate() {
@@ -151,14 +82,51 @@ function main() {
   const imgTpl = vTrack.clipList.find((c) => /\.png$/i.test(c.filename || ''))
     || t.trackInfos.flatMap((x) => x.clipList || [])
       .find((c) => /\.png$/i.test(c.filename || ''));
-  const resTpl = tl.resources[0];
+  // A resource is shaped by its media type: streamType 5 with a video stream
+  // for a still, 2 for video, 3 with an audio stream for sound. Cloning one
+  // shape for all of them declares a PNG to be a video and a WAV to have no
+  // audio, and Filmora rejects the project outright. Pull one of each from a
+  // project that contains all three.
+  const resByKind = (() => {
+    const src = process.env.WFP_AUDIO_TEMPLATE
+      || 'C:/Users/eliha/Videos/Benefits Wallet video/filmora_project/Benefits Wallet - draft v7.wfp';
+    const py = `
+import zipfile, json
+z = zipfile.ZipFile(r"${src}")
+n = [x for x in z.namelist() if x.endswith("timeline.wesproj")][0]
+d = json.loads(z.read(n).decode("utf-8"))
+out = {}
+for r in d["resources"]:
+    ext = r.get("filename","").split(".")[-1].lower()
+    kind = "video" if ext in ("mp4","mov") else "audio" if ext in ("mp3","m4a","wav") else "image"
+    out.setdefault(kind, r)
+print(json.dumps(out))
+`;
+    try {
+      return JSON.parse(execFileSync('python', ['-c', py], { maxBuffer: 1 << 26 }).toString());
+    } catch { return {}; }
+  })();
+  const kindOfPath = (p) => (/\.(mp4|mov)$/i.test(p) ? 'video'
+    : /\.(wav|mp3|m4a)$/i.test(p) ? 'audio' : 'image');
 
   const resources = [];
   const addResource = (path, lengthUnits) => {
-    const r = JSON.parse(JSON.stringify(resTpl));
+    const kind = kindOfPath(path);
+    const tpl = resByKind[kind] || resByKind.video || tl.resources[0];
+    const r = JSON.parse(JSON.stringify(tpl));
     r.sourceUuid = uuid();
     r.filename = fileUrl(path);
-    r.mediaLength = lengthUnits;
+    r.mediaLength = kind === 'image' ? 0 : lengthUnits;
+    if (r.vidStreamInfo) {
+      for (const v of r.vidStreamInfo) {
+        v.width = 1080; v.height = 1920; v.xRatio = 1080; v.yRatio = 1920;
+        v.frameRate = { den: 1, num: 30 };
+        v.streamLength = kind === 'image' ? 0 : lengthUnits;
+      }
+    }
+    if (r.audStreamInfo) {
+      for (const a of r.audStreamInfo) a.streamLength = lengthUnits;
+    }
     return (resources.push(r), r);
   };
 
@@ -260,35 +228,115 @@ for tr in d["timelineInfos"][0]["trackInfos"]:
   }
 
   // --- assemble the tracks ---
-  const blank = (trackType, tag) => {
-    const base = t.trackInfos.find((x) => x.trackType === trackType) || t.trackInfos[0];
-    const tr = JSON.parse(JSON.stringify(base));
-    tr.clipList = [];
-    tr.uuid = uuid();
-    if (tag !== undefined) tr.trackTag = tag;
-    return tr;
+  //
+  // Keep the template's trackInfos exactly as Filmora wrote them - count,
+  // order, uuids, bus references, userData - and only fill the clip lists.
+  // Building tracks from scratch produced a project Filmora refused to open,
+  // while a template with one file swapped opened fine, so the structure here
+  // is load bearing in ways that are not visible in the JSON.
+  const videoTracks = t.trackInfos.filter((x) => x.trackType === 1);
+  const audioTracks = t.trackInfos.filter((x) => x.trackType === 2);
+  if (videoTracks.length < 2 || audioTracks.length < 1) {
+    throw new Error('template needs at least two video tracks and one audio track');
+  }
+  for (const tr of t.trackInfos) tr.clipList = [];
+  videoTracks[0].clipList = videoClips;   // the fifteen clips
+  videoTracks[1].clipList = capClips;     // captions above them
+  audioTracks[0].clipList = sfxClips;     // effects; the rest stay empty for
+                                          // the song and the voiceover
+
+  // --- the media bin -------------------------------------------------------
+  //
+  // timeline.wesproj and medias_info.json are two parallel views of the same
+  // files, keyed by different id spaces, and Filmora refuses a project where
+  // the bin describes media the timeline does not use. Rebuild the bin from
+  // the same source list rather than leaving the template's.
+  const binTpl = JSON.parse(
+    files['ProjectFolder/Medias/medias_info.json'].toString('utf8'));
+  const oldItems = Object.entries(binTpl.media_items);
+  const tlItemId = oldItems.find(([, v]) => v.media_type === 1048576)?.[0];
+  const imgItem = oldItems.find(([, v]) => v.media_type === 16)?.[1];
+  const vidItem = oldItems.find(([, v]) => v.media_type === 2)?.[1];
+  const mediaJsonFor = (id) => {
+    const k = `ProjectFolder/Medias/${id}/media.json`;
+    return files[k] ? JSON.parse(files[k].toString('utf8')) : null;
+  };
+  const imgMediaTpl = mediaJsonFor(oldItems.find(([, v]) => v.media_type === 16)?.[0]);
+  const vidMediaTpl = mediaJsonFor(oldItems.find(([, v]) => v.media_type === 2)?.[0]);
+
+  let guidN = 0;
+  const guid = () => {
+    guidN++;
+    const h = (x, w) => x.toString(16).toUpperCase().padStart(w, '0');
+    return `{${h(0xA0000000 + guidN, 8)}-${h(guidN, 4)}-4${h(guidN % 0xfff, 3)}`
+      + `-8${h((guidN * 13) % 0xfff, 3)}-${h(guidN * 7654321, 12).slice(-12)}}`;
   };
 
-  const tracks = [];
-  const aVoice = blank(2, null); tracks.push(aVoice);          // narration, empty
-  const aMusic = blank(2, null); tracks.push(aMusic);          // TikTok song, empty
-  const aSfx = blank(2, 1); aSfx.clipList = sfxClips; tracks.push(aSfx);
-  const vMain = blank(1, 2); vMain.clipList = videoClips; tracks.push(vMain);
-  const aSpare = blank(2, 3); tracks.push(aSpare);
-  const vCap = blank(1, 4); vCap.clipList = capClips; tracks.push(vCap);
+  // drop every per-media folder the template brought, then write ours
+  for (const k of Object.keys(files)) {
+    if (/^ProjectFolder\/Medias\/\{[^/]+\}\/media\.json$/.test(k)) delete files[k];
+  }
 
-  t.trackInfos = tracks;
-  tl.resources = resources;
+  const mediaItems = {};
+  const now = Math.floor(Date.now() / 1000);
+  for (const r of resources) {
+    const path = r.filename.replace(/^file:\//, '');
+    const kind = kindOfPath(path);
+    const id = guid();
+    const base = kind === 'image' ? imgItem : vidItem;
+    if (!base) continue;
+    const item = JSON.parse(JSON.stringify(base));
+    item.id = id;
+    item.download_url = path;
+    item.name = path.split('/').pop().replace(/\.[^.]+$/, '');
+    item.import_time = now;
+    item.media_type = kind === 'image' ? 16 : 2;
+    item.media_length = kind === 'image' ? 50000000 : (r.mediaLength || 50000000);
+    delete item.src_md5;
+    mediaItems[id] = item;
 
-  info.project_file_name = PROJECT_NAME;
-  info.project_timeline_duration = total;
-  info.project_timeline_framerate = [30, 1];
-  info.project_timeline_resolution = [1080, 1920];
-  info.project_date_modify = Math.floor(Date.now() / 1000);
-  info.proj_zip_save_path = resolve(OUT).replace(/\\/g, '/');
-  t.frameRate = { den: 1, num: 30 };
-  t.resolutionWidth = 1080;
-  t.resolutionHeight = 1920;
+    const mTpl = kind === 'image' ? imgMediaTpl : vidMediaTpl;
+    if (mTpl) {
+      const m = JSON.parse(JSON.stringify(mTpl));
+      m.file_name = path;
+      if (m.sourceInfo?.basicInfo) {
+        m.sourceInfo.basicInfo.mediaLength = kind === 'image' ? 0 : (r.mediaLength || 0);
+      }
+      for (const vs of m.sourceInfo?.vidStreamInfos || []) {
+        vs.streamLength = kind === 'image' ? 0 : (r.mediaLength || 0);
+        vs.width = 1080; vs.height = 1920; vs.xRatio = 1080; vs.yRatio = 1920;
+        vs.frameRate = { den: 1, num: 30 };
+      }
+      files[`ProjectFolder/Medias/${id}/media.json`] =
+        Buffer.from(JSON.stringify(m), 'utf8');
+    }
+  }
+
+  // the timeline is itself a bin item; keep its id so its folder still matches
+  const tlItem = JSON.parse(JSON.stringify(binTpl.media_items[tlItemId]));
+  tlItem.duration = total;
+  tlItem.create_time = now;
+  tlItem.name = PROJECT_NAME;
+  mediaItems[tlItemId] = tlItem;
+
+  binTpl.media_items = mediaItems;
+  binTpl.media_structure = {
+    visible: 'true',
+    SerializeDataOnlyProjectUsered: 'false',
+    media_item: tlItemId,
+  };
+  files['ProjectFolder/Medias/medias_info.json'] =
+    Buffer.from(JSON.stringify(binTpl), 'utf8');
+
+  // extra.json is UI bookkeeping for clips that no longer exist; start clean
+  const extraKey = Object.keys(files).find((k) => k.endsWith('/extra.json'));
+  if (extraKey) {
+    files[extraKey] = Buffer.from(JSON.stringify({
+      fontNameInfo: [], usedBizFont: [], usedTemplateResInfo: {},
+      mediaClipsMapInfo: {}, allMarkersInfo: { beatDetectInfo: {} },
+      pendingMarkersInfo: {}, highlightInfo: {}, TextSentence: { TextSentence: [] },
+    }), 'utf8');
+  }
 
   files[tlName] = Buffer.from(JSON.stringify(tl), 'utf8');
   files['ProjectFolder/project_info.json'] = Buffer.from(JSON.stringify(info, null, 4), 'utf8');
