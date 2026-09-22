@@ -10,8 +10,8 @@
 
 /** [clip file stem, seconds] in timeline order. */
 export const TIMELINE = [
-  ['01_quad', 12], ['02_slicing', 12], ['03_slice', 10], ['04_effort', 13],
-  ['05_quote_murthy', 7], ['06_circuit', 8], ['07_stand', 10], ['08_both', 11],
+  ['01_live', 12], ['02_slicing', 12], ['03_slice', 10], ['04_effort', 13],
+  ['05_quote_murthy', 7], ['06_quad', 10], ['07_stand', 10], ['08_both', 11],
   ['09_vision', 10], ['10_pathway', 12], ['11_instincts', 12], ['12_site', 17],
   ['13_scale', 11], ['14_future', 13], ['15_punch', 8],
 ];

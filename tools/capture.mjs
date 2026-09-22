@@ -94,8 +94,8 @@ const CLIPS = [
   // the other three holes with the licensed research footage
   // warm 0: the opener animates over its first second, and warming would run
   // that build off the front of the clip before recording starts
-  { id: '01', scene: 'quad',         seconds: 12, timeScale: 1, warm: 0,
-    caption: 'זה מוח אמיתי של זבוב. שלושה חלונות מהמחקר עצמו, ואחד מהמודל שאני הרצתי.' },
+  { id: '01', scene: 'live',         seconds: 12, warm: 0,
+    caption: 'זבוב משחק מלך הפלאפל. ליד, המוח שלו רץ באמת. למטה, מה שהוא רואה.' },
   { id: '02', scene: 'slicing',      seconds: 12, timeScale: 1,
     caption: 'וככה מיפו אותו. חתכו מוח לאלפי פרוסות וצילמו כל אחת במיקרוסקופ אלקטרונים.' },
   { id: '03', scene: 'slice',        seconds: 10, timeScale: 1, warm: 0,
@@ -104,8 +104,9 @@ const CLIPS = [
     caption: 'מוח אחד יצא 21 מיליון תמונות. גוגל בנתה רשת נוירונים שעקבה אחרי כל סיב לבד.' },
   { id: '05', scene: 'quote_murthy', seconds: 7, timeScale: 1,
     caption: 'מאלה מרתי מפרינסטון: אין שום קונקטום מלא אחר של מוח, לשום חיה בוגרת במורכבות הזאת.' },
-  { id: '06', scene: 'circuit',      seconds: 8,
-    caption: 'מתוך המפה הזאת לקחתי מעגל אחד, בדיוק את זה שאחראי לראות משהו ולזוז אליו.' },
+  // 06 is the live panel of the research four-up; research.mjs fills the rest
+  { id: '06', scene: 'quad',         seconds: 10, timeScale: 1, warm: 0,
+    caption: 'מתוך המפה הזאת לקחתי מעגל אחד. שלושת החלונות האחרים הם מהמחקר עצמו.' },
   { id: '07', scene: 'stand',        seconds: 10,
     caption: 'ואז נתתי לו דוכן פלאפל. אף אחד לא לימד אותו לשחק.' },
   { id: '08', scene: 'both',         seconds: 11,

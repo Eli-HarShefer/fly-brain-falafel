@@ -39,7 +39,7 @@ const W = 1080, H = 1920, FPS = 30;
  */
 const REELS = [
   {
-    id: '01', scene: 'quad', seconds: 12,
+    id: '06', scene: 'quad', seconds: 10,
     // the live 3D panel is captured first by tools/capture.mjs; this pass only
     // fills the three holes, so the base is that clip rather than a still plate
     base: 'clip',

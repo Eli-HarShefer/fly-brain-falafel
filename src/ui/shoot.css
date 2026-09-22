@@ -157,7 +157,21 @@
    scene's frame handler drives opacity and scale per frame - a CSS transition
    would need wall-clock time, and the capture rig advances none between
    screenshots, so the whole build would land on frame one. */
-.s-body--quad .frame { opacity: 0; }
+.s-body--quad .frame,
+.s-body--live .frame { opacity: 0; }
+
+/* The opener: the stand and the brain side by side, the eye across the bottom.
+   One moment shown three ways, all three live off the same tick, so what the
+   fly does, what fires, and what it sees line up frame for frame. */
+.s-body--live {
+  /* the stand is a wide scene and the brain is a blob, so the split is not
+     even: the game gets the room it needs to stay readable */
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 0.66fr);
+  gap: 12px;
+}
+.s-body--live .frame:nth-child(3) { grid-column: 1 / -1; }
+.s-body--live .frame__tag { font-size: 25px; padding: 6px 15px; top: 13px; }
 
 /* caption mode: the foot is empty, so give the height to the visual and leave
    the bottom clear for the timed caption images */

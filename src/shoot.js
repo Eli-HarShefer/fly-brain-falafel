@@ -166,6 +166,45 @@ const SCENES = {
     frames: [{ kind: 'still', paint: (c, w, h) => drawQuote(c, w, h, QUOTES.seung) }],
   },
 
+  live: {
+    title: 'זבוב משחק מלך הפלאפל',
+    sub: 'ליד: <em>המוח שלו</em> רץ באמת. למטה: <em>מה שהוא רואה</em> מהעיניים.',
+    note: 'אותו רגע בדיוק, בשלושה חלונות.',
+    layout: 'live',
+    frames: [
+      { kind: 'stand', tag: 'הדוכן' },
+      { kind: 'brain', tag: 'המוח', tagClass: 'frame__tag--them' },
+      { kind: 'eye', tag: 'מה שהוא רואה' },
+    ],
+    setup: (c) => {
+      c.view.setCloudVisible(true);
+      c.view.setEdgesVisible(true);
+      c.view.controls.autoRotate = true;
+      c.view.controls.autoRotateSpeed = 2.0;
+      c.view.camera.position.set(0.02, 0.18, 1.5).add(c.view.center);
+      c.view.controls.update();
+      c.panels = [...document.querySelectorAll('.s-body--live .frame')];
+    },
+    /** Same staggered build as before: stand, then brain, then the eye. */
+    frame: (c, f) => {
+      const ease = (p) => {
+        const t = Math.max(0, Math.min(1, p));
+        return 1 - Math.pow(1 - t, 3);
+      };
+      const head = document.querySelector('.s-head');
+      if (head) {
+        const e = ease((f - 1) / 13);
+        head.style.opacity = e;
+        head.style.transform = 'translateY(' + ((1 - e) * 20).toFixed(2) + 'px)';
+      }
+      (c.panels || []).forEach((panel, i) => {
+        const e = ease((f - (4 + i * 9)) / 11);
+        panel.style.opacity = e.toFixed(3);
+        panel.style.transform = 'scale(' + (0.9 + 0.1 * e).toFixed(4) + ')';
+      });
+    },
+  },
+
   quad: {
     title: 'מוח אמיתי של זבוב',
     sub: 'שלושה חלונות מהמחקר עצמו, ואחד מהמודל ש<em>אני</em> הרצתי עליו',
@@ -444,7 +483,7 @@ async function main() {
 
   // main frames
   const body = $('s-body');
-  if (scene.layout === 'quad') body.classList.add('s-body--quad');
+  if (scene.layout) body.classList.add('s-body--' + scene.layout);
   let slotNo = 0;
   for (const f of scene.frames) {
     const div = document.createElement('div');
