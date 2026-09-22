@@ -153,6 +153,12 @@
   text-align: center;
 }
 
+/* The opener builds instead of arriving whole. The panels start hidden and the
+   scene's frame handler drives opacity and scale per frame - a CSS transition
+   would need wall-clock time, and the capture rig advances none between
+   screenshots, so the whole build would land on frame one. */
+.s-body--quad .frame { opacity: 0; }
+
 /* caption mode: the foot is empty, so give the height to the visual and leave
    the bottom clear for the timed caption images */
 .no-note .stage9 { padding-block-end: 470px; }

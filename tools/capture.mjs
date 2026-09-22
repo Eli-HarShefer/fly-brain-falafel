@@ -92,7 +92,9 @@ async function evaluate(expr, session, awaitPromise = true) {
 const CLIPS = [
   // 01 is the live panel of the four-up opener; tools/research.mjs then fills
   // the other three holes with the licensed research footage
-  { id: '01', scene: 'quad',         seconds: 12, timeScale: 1,
+  // warm 0: the opener animates over its first second, and warming would run
+  // that build off the front of the clip before recording starts
+  { id: '01', scene: 'quad',         seconds: 12, timeScale: 1, warm: 0,
     caption: 'זה מוח אמיתי של זבוב. שלושה חלונות מהמחקר עצמו, ואחד מהמודל שאני הרצתי.' },
   { id: '02', scene: 'slicing',      seconds: 12, timeScale: 1,
     caption: 'וככה מיפו אותו. חתכו מוח לאלפי פרוסות וצילמו כל אחת במיקרוסקופ אלקטרונים.' },

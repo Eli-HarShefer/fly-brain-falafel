@@ -21,9 +21,25 @@ const VIDEO_DIR = process.env.VIDEO_DIR || './video';
 const OUT = join(VIDEO_DIR, 'captions');
 
 /** Longest a single caption may run, in words, before it is split. */
-const MAX_WORDS = 7;
+const MAX_WORDS = 8;
+/** Below this a caption is a fragment, not a line; it gets merged into its
+ *  neighbour rather than flashing on its own. */
+const MIN_WORDS = 3;
 /** Nothing should sit on screen for less than this; it reads as a flicker. */
-const MIN_SEC = 0.9;
+const MIN_SEC = 1.0;
+
+/**
+ * Words that must not be the last thing on a caption.
+ *
+ * Hebrew hangs a lot of weight on short function words, and a line that ends on
+ * one leaves the reader mid-thought: "ופה התשובה למה הוא" and then a cut. They
+ * get pushed to the front of the next caption instead.
+ */
+const DANGLING = new Set([
+  'של', 'את', 'אל', 'עם', 'על', 'כי', 'אם', 'מה', 'למה', 'מי', 'זה', 'זו',
+  'הוא', 'היא', 'הם', 'הן', 'לא', 'גם', 'רק', 'כל', 'בין', 'או', 'אבל',
+  'כמה', 'איזה', 'איפה', 'כשהוא', 'שהוא', 'שזה',
+]);
 
 /** [clip length in seconds, narration] in timeline order. */
 const SCRIPT = [
@@ -88,6 +104,36 @@ function chunk(text) {
         out.push(w.slice(i, i + size).join(' '));
       }
     }
+  }
+  return tidy(out);
+}
+
+/**
+ * Second pass over the pieces: merge the fragments, and move a dangling word
+ * forward. Done after splitting rather than during, because whether a piece is
+ * too small only becomes clear once its neighbours exist.
+ */
+function tidy(pieces) {
+  const out = pieces.slice();
+
+  // a trailing function word belongs with what follows it
+  for (let i = 0; i < out.length - 1; i++) {
+    const w = out[i].split(/\s+/);
+    while (w.length > 1 && DANGLING.has(w[w.length - 1].replace(/[.,:!?]$/, ''))) {
+      out[i + 1] = w.pop() + ' ' + out[i + 1];
+    }
+    out[i] = w.join(' ');
+  }
+
+  // then fold anything still too small into the shorter neighbour
+  for (let i = 0; i < out.length; i++) {
+    if (out.length === 1) break;
+    if (out[i].split(/\s+/).length >= MIN_WORDS) continue;
+    const prev = i > 0 ? out[i - 1].split(/\s+/).length : Infinity;
+    const next = i < out.length - 1 ? out[i + 1].split(/\s+/).length : Infinity;
+    if (next <= prev) out.splice(i, 2, out[i] + ' ' + out[i + 1]);
+    else out.splice(i - 1, 2, out[i - 1] + ' ' + out[i]);
+    i = -1;   // sizes shifted; start again
   }
   return out;
 }

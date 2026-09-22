@@ -186,6 +186,34 @@ const SCENES = {
       // closer than the full-frame scenes: this panel is a quarter of the width
       c.view.camera.position.set(0.02, 0.18, 1.46).add(c.view.center);
       c.view.controls.update();
+      c.panels = [...document.querySelectorAll('.s-body--quad .frame')];
+      document.getElementById('stage').dataset.intro = 'out';
+    },
+    /**
+     * The build. Panels land 8 frames apart and each eases over 11, so a
+     * second in all four are up and the eye has been walked around the grid
+     * instead of dropped into it. Our own model lands first, then the three
+     * windows from the research.
+     */
+    frame: (c, f) => {
+      const ease = (p) => {
+        const t = Math.max(0, Math.min(1, p));
+        return 1 - Math.pow(1 - t, 3);
+      };
+      const head = document.querySelector('.s-head');
+      if (head) {
+        const e = ease((f - 1) / 13);
+        head.style.opacity = e;
+        head.style.transform = 'translateY(' + ((1 - e) * 20).toFixed(2) + 'px)';
+      }
+      const order = [3, 0, 1, 2];
+      order.forEach((idx, i) => {
+        const panel = c.panels && c.panels[idx];
+        if (!panel) return;
+        const e = ease((f - (5 + i * 8)) / 11);
+        panel.style.opacity = e.toFixed(3);
+        panel.style.transform = 'scale(' + (0.88 + 0.12 * e).toFixed(4) + ')';
+      });
     },
   },
 

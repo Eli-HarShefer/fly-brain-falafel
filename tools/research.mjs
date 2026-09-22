@@ -43,10 +43,13 @@ const REELS = [
     // the live 3D panel is captured first by tools/capture.mjs; this pass only
     // fills the three holes, so the base is that clip rather than a still plate
     base: 'clip',
+    // `in` matches the build the stage runs on its own panel: these three are
+    // composited by ffmpeg, so their fade has to happen here or they would pop
+    // up whole over an opener that is still assembling itself
     slots: [
-      { src: 'suppvideo6.mp4', start: 2 },     // the whole brain turning
-      { src: 'suppvideo6.mp4', start: 38 },    // visual projection neurons
-      { src: 'suppvideo6.mp4', start: 70 },    // descending neurons
+      { src: 'suppvideo6.mp4', start: 2, in: 0.43 },    // the whole brain turning
+      { src: 'suppvideo6.mp4', start: 38, in: 0.70 },   // visual projection neurons
+      { src: 'suppvideo6.mp4', start: 70, in: 0.97 },   // descending neurons
     ],
     caption: 'שלושה חלונות מהמחקר עצמו, ואחד מהמודל שאני הרצתי עליו. '
       + 'מאה שלושים ותשעה אלף נוירונים.',
@@ -220,7 +223,10 @@ function composite(plate, rects, reel, out) {
   let last = '0:v';
   rects.forEach((r, i) => {
     const w = r.w % 2 ? r.w - 1 : r.w;
-    parts.push(`[${i + 1}:v]scale=${w}:-2,setsar=1[s${i}]`);
+    const slot = reel.slots[i];
+    const fade = slot.in
+      ? `,format=yuva420p,fade=t=in:st=${slot.in}:d=0.37:alpha=1` : '';
+    parts.push(`[${i + 1}:v]scale=${w}:-2,setsar=1${fade}[s${i}]`);
     const next = i === rects.length - 1 ? 'o' : `b${i}`;
     parts.push(`[${last}][s${i}]overlay=${r.x}:${r.y}+(${r.h}-overlay_h)/2`
       + `:format=auto[${next}]`);

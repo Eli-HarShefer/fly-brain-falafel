@@ -26,57 +26,27 @@ export const AT = (() => {
 })();
 
 /**
- * Sound cues: {file, at, gain}.
+ * One sound, on every cut.
  *
- * Transition cues land slightly before the cut they cover, because a whoosh
- * that starts on the frame of the cut reads as late - the ear wants the air to
- * be already moving when the picture changes.
+ * A different effect per beat - clicks on numbers, pops on panels, a shutter
+ * here, a boom there - reads as clutter rather than as design. A single
+ * transition sound used every single time becomes the video's own punctuation:
+ * you stop hearing it as an effect and start hearing it as the edit.
+ *
+ * So: one whoosh on every scene change, and one low drop on the final shot,
+ * because a film that simply stops feels broken rather than finished. Nothing
+ * else. Override the choice with SFX_WHOOSH to audition another.
  */
+export const TRANSITION = process.env.SFX_WHOOSH || 'whoosh';
+
+/** How far before the cut the air starts moving. */
+const LEAD = 0.22;
+
 export const CUES = [
-  { file: 'click', at: AT['01'] + 0.35, gain: 0.5 },
-  { file: 'click', at: AT['01'] + 0.7, gain: 0.45 },
-  { file: 'click', at: AT['01'] + 1.05, gain: 0.45 },
-  { file: 'click', at: AT['01'] + 1.4, gain: 0.4 },
-
-  { file: 'whoosh', at: AT['02'] - 0.25, gain: 0.8 },
-  { file: 'swish', at: AT['03'] - 0.2, gain: 0.75 },
-
-  { file: 'boom_tiktok', at: AT['04'] - 0.15, gain: 0.7 },
-  { file: 'click', at: AT['04'] + 1.6, gain: 0.5 },
-  { file: 'click', at: AT['04'] + 5.2, gain: 0.5 },
-  { file: 'click', at: AT['04'] + 8.8, gain: 0.5 },
-
-  { file: 'shutter', at: AT['05'] + 0.35, gain: 0.6 },
-
-  { file: 'whoosh', at: AT['06'] - 0.25, gain: 0.75 },
-  { file: 'swish', at: AT['07'] - 0.2, gain: 0.7 },
-  { file: 'pop', at: AT['07'] + 2.4, gain: 0.5 },
-  { file: 'pop', at: AT['07'] + 5.1, gain: 0.5 },
-  { file: 'pop', at: AT['07'] + 7.8, gain: 0.5 },
-
-  { file: 'whoosh', at: AT['08'] - 0.25, gain: 0.75 },
-
-  { file: 'boom_tiktok', at: AT['09'] - 0.15, gain: 0.7 },
-  { file: 'click', at: AT['09'] + 0.6, gain: 0.5 },
-  // nothing into 10: it is the same argument continuing
-
-  { file: 'shutter', at: AT['11'] - 0.15, gain: 0.7 },
-  { file: 'pop', at: AT['11'] + 0.5, gain: 0.5 },
-  { file: 'pop', at: AT['11'] + 1.0, gain: 0.5 },
-  { file: 'pop', at: AT['11'] + 1.5, gain: 0.5 },
-  { file: 'pop', at: AT['11'] + 2.0, gain: 0.5 },
-
-  { file: 'whoosh', at: AT['12'] - 0.25, gain: 0.75 },
-
-  { file: 'boom', at: AT['13'], gain: 0.8 },
-  { file: 'pop', at: AT['13'] + 0.5, gain: 0.6 },
-
-  { file: 'swish', at: AT['14'] - 0.2, gain: 0.7 },
-  { file: 'click', at: AT['14'] + 1.2, gain: 0.5 },
-  { file: 'click', at: AT['14'] + 4.8, gain: 0.5 },
-  { file: 'click', at: AT['14'] + 8.4, gain: 0.5 },
-
-  // the whole ending hangs on these two
-  { file: 'riser', at: AT['15'] - 3.6, gain: 0.85 },
-  { file: 'sub_drop', at: AT['15'] + 0.1, gain: 0.9 },
+  ...TIMELINE.slice(1).map(([name]) => ({
+    file: TRANSITION,
+    at: AT[name.slice(0, 2)] - LEAD,
+    gain: 0.75,
+  })),
+  { file: 'sub_drop', at: AT['15'] + 0.05, gain: 0.85 },
 ];
