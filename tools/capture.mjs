@@ -92,9 +92,9 @@ async function evaluate(expr, session, awaitPromise = true) {
 const CLIPS = [
   // 01 is the live panel of the four-up opener; tools/research.mjs then fills
   // the other three holes with the licensed research footage
-  // warm 0: the opener animates over its first second, and warming would run
-  // that build off the front of the clip before recording starts
-  { id: '01', scene: 'live',         seconds: 12, warm: 0,
+  // warm hard: the opener has to be mid-action on its very first frame, which
+  // is also the thumbnail. A cold start shows an empty stand and a quiet brain.
+  { id: '01', scene: 'live',         seconds: 12, warm: 900,
     caption: 'זבוב משחק מלך הפלאפל. ליד, המוח שלו רץ באמת. למטה, מה שהוא רואה.' },
   { id: '02', scene: 'slicing',      seconds: 12, timeScale: 1,
     caption: 'וככה מיפו אותו. חתכו מוח לאלפי פרוסות וצילמו כל אחת במיקרוסקופ אלקטרונים.' },
@@ -105,7 +105,7 @@ const CLIPS = [
   { id: '05', scene: 'quote_murthy', seconds: 7, timeScale: 1,
     caption: 'מאלה מרתי מפרינסטון: אין שום קונקטום מלא אחר של מוח, לשום חיה בוגרת במורכבות הזאת.' },
   // 06 is the live panel of the research four-up; research.mjs fills the rest
-  { id: '06', scene: 'quad',         seconds: 10, timeScale: 1, warm: 0,
+  { id: '06', scene: 'quad',         seconds: 10, timeScale: 1, warm: 400,
     caption: 'מתוך המפה הזאת לקחתי מעגל אחד. שלושת החלונות האחרים הם מהמחקר עצמו.' },
   { id: '07', scene: 'stand',        seconds: 10,
     caption: 'ואז נתתי לו דוכן פלאפל. אף אחד לא לימד אותו לשחק.' },

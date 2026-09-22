@@ -153,13 +153,6 @@
   text-align: center;
 }
 
-/* The opener builds instead of arriving whole. The panels start hidden and the
-   scene's frame handler drives opacity and scale per frame - a CSS transition
-   would need wall-clock time, and the capture rig advances none between
-   screenshots, so the whole build would land on frame one. */
-.s-body--quad .frame,
-.s-body--live .frame { opacity: 0; }
-
 /* The opener: the stand and the brain side by side, the eye across the bottom.
    One moment shown three ways, all three live off the same tick, so what the
    fly does, what fires, and what it sees line up frame for frame. */
